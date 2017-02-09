@@ -1,6 +1,5 @@
 import { expect } from 'chai';
-import Context from '../src/context';
-import Entity from '../src/entity';
+import { Context, Entity } from '../../src/core';
 
 describe('Entity', () => {
   let entity: Entity;

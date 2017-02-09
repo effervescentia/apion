@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import Store from '../src/store';
+import { Store } from '../../src/core';
 
 describe('Store', () => {
   let store: Store;

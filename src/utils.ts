@@ -1,5 +1,4 @@
-import Context from './context';
-import Store from './store';
+import { Context, Store } from './core';
 
 export function inherit(target: Context, parent: Context, stores: string[]) {
   if (parent) {

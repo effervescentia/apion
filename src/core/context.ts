@@ -1,5 +1,5 @@
+import { inherit } from '../utils';
 import Store from './store';
-import { inherit } from './utils';
 
 export default class Context {
 

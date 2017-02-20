@@ -18,4 +18,4 @@ deployment:
   production:
     branch: master
     commands:
-      - yarn run semantic-release || true
+      - yarn start release || true

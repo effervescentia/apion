@@ -6,6 +6,9 @@
       "ES2016.Array.include",
       "ScriptHost"
     ],
+    "types": [
+      "mocha"
+    ],
     "module": "commonjs",
     "moduleResolution": "node",
     "target": "ES5",

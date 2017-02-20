@@ -4,12 +4,12 @@ import { Context, Entity } from '../../src/core';
 describe('Entity', () => {
   let entity: Entity;
 
-  beforeEach(() => entity = new Entity(''));
+  beforeEach(() => entity = new Entity());
 
   it('should inherit context from parent', () => {
     entity.ctx.params.set('paramKey', 'paramValue');
 
-    const childEntity = new Entity('', entity);
+    const childEntity = new Entity(entity);
 
     expect(childEntity.ctx.params.get('paramKey')).to.eq('paramValue');
   });
@@ -39,6 +39,17 @@ describe('Entity', () => {
   testUpdateStore('header');
 
   testOverrideStore('headers');
+
+  describe('register()', () => {
+    it('should add metadata', () => {
+      const middleware = () => null;
+
+      entity.register('before request', middleware);
+
+      expect(entity.middleware).to.have.length(1);
+      expect(entity.middleware[0]).to.eql(['before request', middleware]);
+    });
+  });
 
   function testUpdateStore(method: keyof Entity, store: keyof Context = <any>`${method}s`) {
     describe(`${method}()`, () => {

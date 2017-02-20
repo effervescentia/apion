@@ -1,10 +1,13 @@
 import Context from './context';
+import { Middleware } from './types';
 
 export default class Entity {
 
+  name: string = null;
   ctx: Context = new Context(this.parent && this.parent.ctx);
+  middleware: [string, Middleware][] = [];
 
-  constructor(public name: string, private parent?: Entity) { }
+  constructor(private parent?: Entity) { }
 
   setParent(parent: Entity) {
     this.parent = parent;
@@ -64,6 +67,11 @@ export default class Entity {
 
   cookies(cookies: any) {
     this.ctx.cookies.map = cookies;
+    return this;
+  }
+
+  register(lifecycle: string, middleware: Middleware) {
+    this.middleware.push([lifecycle, middleware]);
     return this;
   }
 }

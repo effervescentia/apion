@@ -1,12 +1,7 @@
 import { expect } from 'chai';
-import 'mocha';
 import * as pkg from '../src';
 import Apion from '../src/apion';
 import { Context, Entity, Store } from '../src/core';
-
-import './apion';
-import './core';
-import './entities';
 
 describe('package', () => {
   it('should expose Apion as the default export', () => {

@@ -1,48 +1,46 @@
-import { expect } from 'chai';
-import { Context } from '../../src/core';
+import { Context, Store } from '../../src/core';
+import { INHERITABLE } from '../../src/core/context';
+import * as utils from '../../src/utils';
+import { expect, sinon } from '../_suite';
 
 describe('Context', () => {
   let context: Context;
 
   beforeEach(() => context = new Context());
+  afterEach(() => sinon.restore());
 
-  it('should inherit fields from parent', () => {
-    context.fields.set('fieldKey', 'fieldValue');
-
-    const childContext = new Context(context);
-
-    expect(childContext.fields.get('fieldKey')).to.eq('fieldValue');
+  it('should have initial values', () => {
+    expect(context.body).to.be.null;
+    expect(context.method).to.be.null;
+    expect(context.auth).to.be.undefined;
+    expect(context.fields).to.be.an.instanceof(Store);
+    expect(context.params).to.be.an.instanceof(Store);
+    expect(context.query).to.be.an.instanceof(Store);
+    expect(context.headers).to.be.an.instanceof(Store);
+    expect(context.cookies).to.be.an.instanceof(Store);
+    expect(context.middleware).to.eql([]);
   });
 
-  it('should inherit params from parent', () => {
-    context.params.set('paramKey', 'paramValue');
-
+  it('should set parent', () => {
     const childContext = new Context(context);
 
-    expect(childContext.params.get('paramKey')).to.eq('paramValue');
+    expect(childContext.parent).to.eq(context);
   });
 
-  it('should inherit query from parent', () => {
-    context.query.set('queryKey', 'queryValue');
+  it('should extend inheritable stores', () => {
+    const extend = sinon.stub(utils, 'extend');
 
     const childContext = new Context(context);
 
-    expect(childContext.query.get('queryKey')).to.eq('queryValue');
+    expect(extend.calledWith(childContext, context, INHERITABLE)).to.be.true;
   });
 
-  it('should inherit headers from parent', () => {
-    context.headers.set('headerKey', 'headerValue');
+  it('should extend inheritable stores on setting a new parent', () => {
+    const childContext = new Context();
+    const extend = sinon.stub(utils, 'extend');
 
-    const childContext = new Context(context);
+    childContext.parent = context;
 
-    expect(childContext.headers.get('headerKey')).to.eq('headerValue');
-  });
-
-  it('should inherit cookies from parent', () => {
-    context.cookies.set('cookieKey', 'cookieValue');
-
-    const childContext = new Context(context);
-
-    expect(childContext.cookies.get('cookieKey')).to.eq('cookieValue');
+    expect(extend.calledWith(childContext, context, INHERITABLE)).to.be.true;
   });
 });

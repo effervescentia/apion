@@ -1,12 +1,13 @@
-import { inherit } from '../utils';
+import { extend } from '../utils';
 import Store from './store';
+import { Middleware } from './types';
+
+export const INHERITABLE: string[] = ['fields', 'params', 'query', 'headers', 'cookies'];
 
 export default class Context {
 
-  static INHERITABLE: string[] = ['fields', 'params', 'query', 'headers', 'cookies'];
-
   /**
-   * mody of the request
+   * body of the request
    */
   body: any = null;
   /**
@@ -37,17 +38,24 @@ export default class Context {
    * map of cookies
    */
   cookies: Store = new Store();
+  /**
+   * array of middleware
+   */
+  middleware: Middleware[] = [];
 
-  constructor(private parent?: Context) {
-    this.inherit();
+  constructor(private _parent?: Context) {
+    this.inherit(_parent);
   }
 
-  setParent(parent: Context) {
-    this.parent = parent;
-    this.inherit();
+  get parent() {
+    return this._parent;
+  }
+  set parent(parent: Context) {
+    this._parent = parent;
+    this.inherit(parent);
   }
 
-  private inherit() {
-    inherit(this, this.parent, Context.INHERITABLE);
+  private inherit(parent: Context) {
+    extend(this, parent, INHERITABLE);
   }
 }

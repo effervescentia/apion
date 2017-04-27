@@ -8,7 +8,7 @@
     "dist/"
   ],
   "repository": "https://github.com/groupby/apion",
-  "author": "Ben Teichman",
+  "author": "Ben Teichman <ben.teichman@groupbyinc.com>",
   "scripts": {
     "start": "start-runner -p re-start/presets/typescript",
     "prepush": "yarn start prepush",
@@ -24,16 +24,19 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@types/chai": "^3.4.34",
-    "@types/mocha": "^2.2.38",
+    "@types/chai": "^3.4.35",
+    "@types/mocha": "^2.2.40",
+    "@types/sinon": "^2.1.2",
     "chai": "^3.5.0",
     "condition-circle": "^1.5.0",
-    "cz-conventional-changelog": "^1.2.0",
-    "husky": "^0.13.0",
+    "cz-conventional-changelog": "^2.0.0",
+    "husky": "^0.13.3",
     "mocha": "^3.2.0",
-    "re-start": "^1.8.6",
+    "re-start": "^1.9.0",
+    "sinon": "^2.1.0",
     "start-simple-cli": "^4.1.1",
-    "tslint-config-groupby": "^1.0.0"
+    "tslint-config-groupby": "^1.0.0",
+    "typescript": "^2.2.2"
   },
   "dependencies": {}
 }

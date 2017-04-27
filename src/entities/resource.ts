@@ -8,7 +8,8 @@ export default class Resource extends Entity {
 
   action(action: string | Entity) {
     if (action instanceof Entity) {
-      return action.setParent(this);
+      action.parent = this;
+      return action;
     } else {
       const actionEntity = new Entity(this);
       actionEntity.name = action;

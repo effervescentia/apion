@@ -4,7 +4,8 @@ export default class Collection extends Resource {
 
   collection(collection: string | Collection) {
     if (collection instanceof Collection) {
-      return collection.setParent(this);
+      collection.parent = this;
+      return collection;
     } else {
       return new Collection(collection, this);
     }
@@ -12,7 +13,8 @@ export default class Collection extends Resource {
 
   resource(resource: string | Resource) {
     if (resource instanceof Resource) {
-      return resource.setParent(this);
+      resource.parent = this;
+      return resource;
     } else {
       return new Resource(resource, this);
     }

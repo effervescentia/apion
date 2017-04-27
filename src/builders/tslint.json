@@ -1,0 +1,8 @@
+{
+  "extends": "../../tslint.json",
+  "rules": {
+    "variable-name": false,
+    "no-expression-statement": false,
+    "no-object-mutation": false
+  }
+}

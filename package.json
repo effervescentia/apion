@@ -7,12 +7,13 @@
   "files": [
     "dist/"
   ],
-  "repository": "https://github.com/groupby/apion",
+  "repository": "https://github.com/effervescentia/apion",
   "author": "Ben Teichman <ben.teichman@groupbyinc.com>",
+  "license": "MIT",
   "scripts": {
-    "start": "start-runner -p re-start/presets/typescript",
-    "prepush": "yarn start prepush",
-    "prepublish": "yarn start build"
+    "start": "echo 'no start script available' && exit -1",
+    "prettify": "prettier --write '{src,test}/**/*.{ts,tsx}'",
+    "precommit": "lint-staged"
   },
   "release": {
     "verifyConditions": "condition-circle"
@@ -22,21 +23,30 @@
       "path": "./node_modules/cz-conventional-changelog"
     }
   },
-  "license": "MIT",
+  "lint-staged": {
+    "{src,test}/**/*.{ts,tsx}": [
+      "prettier --write",
+      "git add"
+    ]
+  },
   "devDependencies": {
-    "@types/chai": "^3.4.35",
-    "@types/mocha": "^2.2.40",
-    "@types/sinon": "^2.1.2",
-    "chai": "^3.5.0",
-    "condition-circle": "^1.5.0",
-    "cz-conventional-changelog": "^2.0.0",
-    "husky": "^0.13.3",
-    "mocha": "^3.2.0",
-    "re-start": "^1.9.0",
-    "sinon": "^2.1.0",
-    "start-simple-cli": "^4.1.1",
+    "@types/chai": "^4.1.4",
+    "@types/mocha": "^5.2.5",
+    "@types/sinon": "^5.0.2",
+    "chai": "^4.1.2",
+    "condition-circle": "^2.0.1",
+    "cz-conventional-changelog": "^2.1.0",
+    "husky": "^0.14.3",
+    "lint-staged": "^7.2.2",
+    "mocha": "^5.2.0",
+    "prettier": "^1.14.2",
+    "sinon": "^6.1.5",
+    "tslib": "^1.9.3",
+    "tslint": "^5.11.0",
+    "tslint-config-airbnb": "^5.10.0",
     "tslint-config-groupby": "^1.0.0",
-    "typescript": "^2.2.2"
+    "tslint-config-prettier": "^1.15.0",
+    "typescript": "^3.0.1"
   },
   "dependencies": {}
 }

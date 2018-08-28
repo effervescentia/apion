@@ -1,5 +1,4 @@
 {
-  "compileOnSave": false,
   "compilerOptions": {
     "lib": [
       "ES6",
@@ -19,13 +18,5 @@
   "exclude": [
     "node_modules",
     "dist"
-  ],
-  "atom": {
-    "rewriteTsconfig": true,
-    "formatOnSave": true
-  },
-  "formatCodeOptions": {
-    "indentSize": 2,
-    "tabSize": 2
-  }
+  ]
 }

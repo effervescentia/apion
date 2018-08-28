@@ -8,6 +8,12 @@ enum Method {
   OPTIONS = 'OPTIONS',
 }
 
+enum Header {
+  CONTENT_TYPE = 'content-type',
+}
+
+interface HeaderSet extends Record<Header | string, string> {}
+
 interface Middleware<T> {
   (client: T, context: object): T;
 }
@@ -44,9 +50,9 @@ enum ReferrerPolicy {
 }
 
 class Headers {
-  headers: Record<string, string>;
+  headers: HeaderSet;
 
-  add(key: string, value: string) {
+  add(key: Header | string, value: string) {
     if (value != null) {
       this.headers[key.toLowerCase()] = value;
     }
@@ -54,13 +60,13 @@ class Headers {
     return this;
   }
 
-  remove(key: string) {
+  remove(key: Header | string) {
     this.headers[key.toLowerCase()] = null;
 
     return this;
   }
 
-  set(headers: Record<string, string>, replace?: boolean) {
+  set(headers: HeaderSet, replace?: boolean) {
     if (replace) {
       this.headers = {};
     }
@@ -70,7 +76,7 @@ class Headers {
     return this;
   }
 
-  get(key: string) {
+  get(key: Header | string) {
     return this.headers[key];
   }
 
@@ -81,52 +87,45 @@ class Headers {
   }
 }
 
-class Client<Parameters extends any[] = []> {
-  routes: Record<string, Client<any>> = {};
+class Context {
   middleware: Middleware<Request>[] = [];
 
-  constructor(private parent?: Client<any>, private constructor?: (...args: Parameters) => object) {}
-
-  route<T extends any[]>(path: string, constructor?: (...args: T) => object) {
-    const client = new Client<T>(this, constructor);
-    this.register(path, client);
-
-    return client;
-  }
-
-  use(middleware: Middleware<Request>) {
-    this.middleware.push(middleware);
+  use(middleware: Middleware<Request>): this;
+  use<K extends keyof Request>(middleware: Middleware<Request[K]>, key: K): this;
+  use(middleware: Middleware<any>, key?: string) {
+    this.middleware.push(key ? (req, ctx) => ({ ...req, [key]: middleware(req[key], ctx) }) : middleware);
 
     return this;
   }
 
-  configure(configurator: (client: Client<Parameters>) => void) {
+  configure(configurator: (context: this) => void) {
     configurator(this);
 
     return this;
   }
 
-  headers(headers: Record<string, string> | Middleware<Headers>) {
-    return this.use((req, ctx) => ({
-      ...req,
-      headers: typeof headers === 'object' ? req.headers.set(headers) : headers(req.headers, ctx),
-    }));
+  headers(headers: HeaderSet | Middleware<Headers>) {
+    return this.use(
+      (originalHeaders, ctx) =>
+        typeof headers === 'object' ? originalHeaders.set(headers) : headers(originalHeaders, ctx),
+      'headers'
+    );
   }
 
   method(method: Method) {
-    return this.use((req) => ({ ...req, method }));
+    return this.use(() => method, 'method');
   }
 
   mode(mode: Mode) {
-    return this.use((req) => ({ ...req, mode }));
+    return this.use(() => mode, 'mode');
   }
 
   referrer(referrer: Referrer | string) {
-    return this.use((req) => ({ ...req, referrer }));
+    return this.use(() => referrer, 'referrer');
   }
 
   referrerPolicy(referrerPolicy: ReferrerPolicy) {
-    return this.use((req) => ({ ...req, referrerPolicy }));
+    return this.use(() => referrerPolicy, 'referrerPolicy');
   }
 
   get() {
@@ -161,15 +160,47 @@ class Client<Parameters extends any[] = []> {
     return this.use(({ body, headers, ...req }) => ({
       ...req,
       body: typeof body === 'string' ? body : JSON.stringify(body),
-      headers: headers.add('content-type', 'application/json'),
+      headers: headers.add(Header.CONTENT_TYPE, 'application/json'),
     }));
   }
 
   build() {
     return null;
   }
+}
 
-  private register(path: string, client: Client<any>) {
+class ClientBuilder<Parameters extends any[] = []> extends Context {
+  context = new Context();
+  routes: Record<string, ClientBuilder<any>> = {};
+  actions: Record<string, ClientBuilder<any>> = {};
+
+  constructor(private parent?: ClientBuilder<any>, private constructor?: (...args: Parameters) => object) {
+    super();
+  }
+
+  route<T extends any[], C extends object>(path: string, constructor?: (...args: T) => C) {
+    const client = new ClientBuilder<T>(this, constructor);
+    this.registerRoute(path, client);
+
+    return client;
+  }
+
+  action<T extends any[], C extends object>(path: string, constructor: (...args: T) => C) {
+    const client = new ClientBuilder<T>(this, constructor);
+    this.registerAction(path, client);
+
+    return client;
+  }
+
+  build() {
+    return null;
+  }
+
+  private registerAction(path: string, client: ClientBuilder<any>) {
+    this.actions[path] = client;
+  }
+
+  private registerRoute(path: string, client: ClientBuilder<any>) {
     this.routes[path] = client;
   }
 }

@@ -11,7 +11,7 @@ client.use(callback: (client: ClientBuilder) => void);
 # routes
 
 ```ts
-const authClient = client.route('auth', (token) => ({ token }));
+const authClient = client.route('auth', (token: string) => ({ token }));
 const publicClient = client.route('public');
 const nestedClient = client.route('nested');
 const firstNestedClient = nestedClient.route('first');

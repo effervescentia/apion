@@ -12,11 +12,19 @@
   "license": "MIT",
   "scripts": {
     "start": "echo 'no start script available' && exit -1",
+    "test": "nyc --reporter=json --reporter=lcov --reporter=text mocha",
+    "tdd": "mocha --watch --watch-extensions ts,tsx --growl",
     "prettify": "prettier --write '{src,test}/**/*.{ts,tsx}'",
     "precommit": "lint-staged"
   },
   "release": {
     "verifyConditions": "condition-circle"
+  },
+  "nyc": {
+    "extension": [
+      ".ts",
+      ".tsx"
+    ]
   },
   "config": {
     "commitizen": {
@@ -33,14 +41,19 @@
     "@types/chai": "^4.1.4",
     "@types/mocha": "^5.2.5",
     "@types/sinon": "^5.0.2",
+    "@types/sinon-chai": "^3.2.0",
     "chai": "^4.1.2",
     "condition-circle": "^2.0.1",
     "cz-conventional-changelog": "^2.1.0",
     "husky": "^0.14.3",
     "lint-staged": "^7.2.2",
     "mocha": "^5.2.0",
+    "mocha-suite": "^1.0.11",
+    "nyc": "^13.0.1",
     "prettier": "^1.14.2",
     "sinon": "^6.1.5",
+    "sinon-chai": "^3.2.0",
+    "ts-node": "^7.0.1",
     "tslib": "^1.9.3",
     "tslint": "^5.11.0",
     "tslint-config-airbnb": "^5.10.0",

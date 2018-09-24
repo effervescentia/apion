@@ -14,8 +14,7 @@
     "start": "echo 'no start script available' && exit -1",
     "test": "nyc --reporter=json --reporter=lcov --reporter=text mocha",
     "tdd": "mocha --watch --watch-extensions ts,tsx --growl",
-    "prettify": "prettier --write '{src,test}/**/*.{ts,tsx}'",
-    "precommit": "lint-staged"
+    "prettify": "prettier --write '{src,test}/**/*.{ts,tsx}'"
   },
   "release": {
     "verifyConditions": "condition-circle"
@@ -38,28 +37,28 @@
     ]
   },
   "devDependencies": {
-    "@types/chai": "^4.1.4",
+    "@types/chai": "^4.1.5",
     "@types/mocha": "^5.2.5",
     "@types/sinon": "^5.0.2",
     "@types/sinon-chai": "^3.2.0",
     "chai": "^4.1.2",
     "condition-circle": "^2.0.1",
     "cz-conventional-changelog": "^2.1.0",
-    "husky": "^0.14.3",
-    "lint-staged": "^7.2.2",
+    "husky": "^1.0.0-rc.15",
+    "lint-staged": "^7.3.0",
     "mocha": "^5.2.0",
     "mocha-suite": "^1.0.11",
     "nyc": "^13.0.1",
-    "prettier": "^1.14.2",
-    "sinon": "^6.1.5",
+    "prettier": "^1.14.3",
+    "sinon": "^6.3.4",
     "sinon-chai": "^3.2.0",
     "ts-node": "^7.0.1",
     "tslib": "^1.9.3",
     "tslint": "^5.11.0",
-    "tslint-config-airbnb": "^5.10.0",
+    "tslint-config-airbnb": "^5.11.0",
     "tslint-config-groupby": "^1.0.0",
     "tslint-config-prettier": "^1.15.0",
-    "typescript": "^3.0.1"
+    "typescript": "^3.0.3"
   },
   "dependencies": {}
 }

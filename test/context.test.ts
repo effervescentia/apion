@@ -1,6 +1,6 @@
 import * as sinon from 'sinon';
 
-import { Method, Mode, Phase, Referrer, ReferrerPolicy, Request } from '../src/types';
+import { Header, Method, Mode, Phase, Referrer, ReferrerPolicy, Request } from '../src/types';
 import suite from './suite';
 
 import Context from '../src/context';
@@ -156,6 +156,42 @@ suite('Context', ({ expect, spy, stub }) => {
       });
     });
 
+    describe('json()', () => {
+      const headers = { z: 'y' };
+      let use: sinon.SinonSpy;
+
+      beforeEach(() => (use = context.use = spy(() => contextSelf)));
+
+      it('should add header and format body', () => {
+        const body = { a: 'B', c: 'D' };
+        const add = spy(() => headers);
+
+        expect(context.json()).to.eq(contextSelf);
+        expect(use).to.be.calledWithExactly(
+          sinon.match((cb) => {
+            const transformed = cb({ body, w: 'x', headers: { add } });
+
+            expect(add).to.be.calledWithExactly(Header.CONTENT_TYPE, 'application/json');
+            return expect(transformed).to.eql({ headers, w: 'x', body: '{"a":"B","c":"D"}' });
+          })
+        );
+      });
+
+      it('should not format body if string', () => {
+        const body = 'ok';
+
+        context.json();
+
+        expect(use).to.be.calledWithExactly(
+          sinon.match((cb) => {
+            const transformed = cb({ body, w: 'x', headers: { add: () => headers } });
+
+            return expect(transformed).to.eql({ headers, body, w: 'x' });
+          })
+        );
+      });
+    });
+
     function expectMethod(fn: () => void, method: Method) {
       const methodStub = (context.method = spy(() => contextSelf));
 
@@ -205,5 +241,39 @@ suite('Context', ({ expect, spy, stub }) => {
         expect(use).to.be.calledWithExactly(phase, middleware);
       });
     }
+  });
+
+  describe('$static', () => {
+    describe('transform()', () => {
+      const key = 'method';
+      const value = 'abc';
+      let use: sinon.SinonSpy;
+
+      beforeEach(() => (use = spy(() => contextSelf)));
+
+      it('should add request transformer middleware', () => {
+        const ctx = { y: 'z' };
+        const originalValue = 143;
+        const transformer = spy(() => value);
+
+        expect(Context.transform({ use } as any, key, transformer)).to.eq(contextSelf);
+        expect(use).to.be.calledWithExactly(
+          sinon.match((cb) => {
+            const transformed = cb({ m: 'n', [key]: originalValue }, ctx);
+
+            expect(transformed).to.eql({ m: 'n', [key]: value });
+            return expect(transformer).to.be.calledWithExactly(originalValue, ctx);
+          })
+        );
+      });
+
+      it('should add request override middleware', () => {
+        Context.transform({ use } as any, key, value);
+
+        expect(use).to.be.calledWithExactly(
+          sinon.match((cb) => expect(cb({ m: 'n' })).to.eql({ m: 'n', [key]: value }))
+        );
+      });
+    });
   });
 });

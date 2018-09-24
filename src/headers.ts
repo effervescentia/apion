@@ -3,13 +3,7 @@ import { Header } from './types';
 export default class Headers {
   headers: Header.Dict = {};
 
-  add(key: Header | string, value: string) {
-    if (value != null) {
-      this.headers[key.toLowerCase()] = value;
-    }
-
-    return this;
-  }
+  add = this.setOne;
 
   remove(key: Header | string) {
     this.headers[key.toLowerCase()] = null;
@@ -27,7 +21,7 @@ export default class Headers {
 
   setOne(key: Header | string, value: string) {
     if (value != null) {
-      this.headers[key.toLowerCase()] = value as string;
+      this.headers[key.toLowerCase()] = value;
     }
 
     return this;
@@ -38,7 +32,7 @@ export default class Headers {
       this.headers = {};
     }
 
-    Object.keys(headers).forEach((key: Header | string) => this.set(key, headers[key]));
+    Object.keys(headers).forEach((key: Header | string) => this.setOne(key, headers[key] as string));
 
     return this;
   }

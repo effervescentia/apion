@@ -1,12 +1,9 @@
 {
   "compilerOptions": {
     "lib": [
-      "ES6",
-      "ES2016.Array.include",
+      "es6",
+      "es2016.array.include",
       "ScriptHost"
-    ],
-    "types": [
-      "mocha"
     ],
     "module": "commonjs",
     "moduleResolution": "node",

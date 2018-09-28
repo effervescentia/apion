@@ -23,7 +23,7 @@ suite('Builder', ({ expect, spy, stub }) => {
     });
 
     it('should have initial properties', () => {
-      expect(builder.context).to.be.an.instanceof(Context);
+      expect(builder.all).to.be.an.instanceof(Context);
       expect(builder.actions).to.eql({});
       expect(builder.routes).to.eql({});
     });

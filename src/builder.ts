@@ -1,40 +1,37 @@
-import ClientBuilder from './builder';
 import Client from './client';
 import Context from './context';
 import { Constructor, Resolver } from './types';
 
-export default class Builder<Params extends any[] = [], Ctx extends object = object> extends Context<Ctx> {
-  context = new Context();
-  actions: Record<string, Builder<any, any>> = {};
-  routes: Record<string, Builder<any, any>> = {};
+export default class Builder<
+  Ctx extends object = {},
+  Routes extends Record<string, Builder> = {},
+  Params extends any[] = []
+> extends Context.Inheritable<Ctx> {
+  actionHandler: Constructor<Params, Ctx> | null = null;
 
-  constructor(public parent?: Builder<any>, public constructor?: Constructor<Params, Ctx>) {
-    super();
+  add<K extends string, T extends any[], C extends Ctx, B extends Builder<C, any, T>>(
+    name: K,
+    path: string | null = (name as string) || null,
+    constructor?: Constructor<T, C>
+  ): Builder<Ctx, Routes & Record<K, B>, Params> {
+    const builder: B = new Builder().extend(this) as any;
+
+    if (path) builder.path(path);
+
+    if (constructor) builder.action(constructor);
+
+    this.attach(name, builder);
+
+    return this as any;
   }
 
-  action<T extends any[], C extends Ctx>(path: string, constructor: Constructor<T, C>) {
-    const builder: Builder<T, C> = new ClientBuilder(this, constructor);
-    this.registerAction(path, builder);
+  action(constructor: Constructor<Params, Ctx>) {
+    this.actionHandler = constructor;
 
-    return builder;
+    return this;
   }
 
-  route<T extends any[], C extends Ctx>(path: string, constructor?: Constructor<T, C>) {
-    const builder: Builder<T, C> = new ClientBuilder(this, constructor);
-    this.registerRoute(path, builder);
-
-    return builder;
-  }
-
-  build(resolver: Resolver) {
-    return new Client<Params, Ctx>(this, resolver);
-  }
-
-  private registerAction<C extends Ctx>(path: string, builder: Builder<any, C>) {
-    this.actions[path] = builder;
-  }
-
-  private registerRoute<C extends Ctx>(path: string, builder: Builder<any, C>) {
-    this.routes[path] = builder;
+  build<R extends Record<string, Client>>(resolver: Resolver, parent?: Context.Inheritable<Ctx>): Client<Params, Ctx> {
+    return new Client<R>(resolver, parent).inherit(this);
   }
 }

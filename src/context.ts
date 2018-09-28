@@ -1,10 +1,12 @@
 import Headers from './headers';
 import Transformer from './transformer';
 import { Header, Method, Mode, Phase, PhasicMiddleware, Referrer, ReferrerPolicy, Request, Response } from './types';
+import URI from './uri';
 import Validator from './validator';
 
-export default class Context<Ctx extends object> {
+class Context<Ctx extends object> {
   middleware: PhasicMiddleware<Ctx>[] = [];
+  uriTransform: URI.Transformer | null = null;
 
   use(middleware: Transformer<Request, Ctx>): this;
   use(phase: Phase.REQUEST, middleware: Transformer<Request, Ctx>): this;
@@ -46,9 +48,22 @@ export default class Context<Ctx extends object> {
     return this;
   }
 
+  uri(uri: string): this;
+  uri(transformer: URI.Transformer): this;
+  uri(uriOrTransformer: any) {
+    this.uriTransform = typeof uriOrTransformer === 'string' ? URI.set(uriOrTransformer) : uriOrTransformer;
+
+    return this;
+  }
+
+  path(path: string) {
+    this.uriTransform = URI.append(path);
+
+    return this;
+  }
+
   headers(headers: Header.Dict | Transformer<Headers, Ctx>) {
-    return Context.transform<Ctx, this, 'headers'>(
-      this,
+    return this.transform(
       'headers',
       (originalHeaders, ctx: Ctx) =>
         typeof headers === 'object' ? originalHeaders.set(headers) : headers(originalHeaders, ctx)
@@ -56,19 +71,23 @@ export default class Context<Ctx extends object> {
   }
 
   method(method: Method) {
-    return Context.transform<Ctx, this, 'method'>(this, 'method', method);
+    return this.transform('method', method);
   }
 
   mode(mode: Mode) {
-    return Context.transform<Ctx, this, 'mode'>(this, 'mode', mode);
+    return this.transform('mode', mode);
   }
 
   referrer(referrer: Referrer | string) {
-    return Context.transform<Ctx, this, 'referrer'>(this, 'referrer', referrer);
+    return this.transform('referrer', referrer);
   }
 
   referrerPolicy(referrerPolicy: ReferrerPolicy) {
-    return Context.transform<Ctx, this, 'referrerPolicy'>(this, 'referrerPolicy', referrerPolicy);
+    return this.transform('referrerPolicy', referrerPolicy);
+  }
+
+  body(body: string | object | ((ctx: Ctx) => string | object)) {
+    return this.transform('body', typeof body === 'function' ? (_: Request, ctx: Ctx) => body(ctx) : body);
   }
 
   get() {
@@ -107,24 +126,56 @@ export default class Context<Ctx extends object> {
     }));
   }
 
-  static transform<C extends object, T extends Context<C>, K extends keyof Request>(
-    context: T,
-    key: K,
-    middleware: Transformer<Request[K], C>
-  ): T;
-  static transform<C extends object, T extends Context<C>, K extends keyof Request>(
-    context: T,
-    key: K,
-    value: string
-  ): T;
-  static transform<C extends object, T extends Context<C>, K extends keyof Request>(
-    context: T,
-    key: K,
-    middlewareOrValue: any
-  ): T {
-    return context.use((req, ctx) => ({
+  transform<K extends keyof Request>(key: K, middleware: Transformer<Request[K], Ctx>): this;
+  transform<K extends keyof Request>(key: K, value: Request[K]): this;
+  transform<K extends keyof Request>(key: K, middlewareOrValue: any) {
+    return this.use((req, ctx) => ({
       ...req,
       [key]: typeof middlewareOrValue === 'function' ? middlewareOrValue(req[key], ctx) : middlewareOrValue,
     }));
   }
 }
+
+namespace Context {
+  export class Inheritable<Ctx extends object, Children extends Record<string, Inheritable<Ctx>> = {}> extends Context<
+    Ctx
+  > {
+    all = new Context<Ctx>();
+    children: Children = {} as Children;
+
+    constructor(public parent?: Inheritable<any>) {
+      super();
+    }
+
+    extend<C extends object>(builder: Inheritable<C>) {
+      this.parent = builder;
+
+      return this;
+    }
+
+    inherit<C extends Ctx>(builder: Inheritable<C>) {
+      builder.extend(this);
+
+      return this;
+    }
+
+    attach<K extends string, B extends Inheritable<any>>(
+      name: K,
+      builder: B
+    ): Inheritable<Ctx, Children & Record<K, B>> {
+      this.children[name] = builder as any;
+
+      return this as any;
+    }
+
+    collapse(context: Context<Ctx> = new Context()): Context<Ctx> {
+      context.middleware.unshift(...this.all.middleware);
+
+      if (!this.parent) return context;
+
+      return this.parent.collapse(context);
+    }
+  }
+}
+
+export default Context;

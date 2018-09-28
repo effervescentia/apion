@@ -60,5 +60,9 @@
     "tslint-config-prettier": "^1.15.0",
     "typescript": "^3.0.3"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@types/escape-string-regexp": "^1.0.0",
+    "@types/node": "^10.11.0",
+    "escape-string-regexp": "^1.0.5"
+  }
 }

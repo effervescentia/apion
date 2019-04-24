@@ -3,7 +3,8 @@
     "lib": [
       "es6",
       "es2016.array.include",
-      "ScriptHost"
+      "es2017.object",
+      "scripthost"
     ],
     "module": "commonjs",
     "moduleResolution": "node",

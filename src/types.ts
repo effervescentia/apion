@@ -3,7 +3,7 @@ import Transformer from './transformer';
 import Validator from './validator';
 
 export interface Constructor<P extends any[], C> {
-  (...params: P): C;
+  (...params: P): Partial<C>;
 }
 
 export enum Header {

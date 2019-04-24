@@ -39,6 +39,7 @@
   "devDependencies": {
     "@types/chai": "^4.1.5",
     "@types/mocha": "^5.2.5",
+    "@types/ramda": "^0.26.8",
     "@types/sinon": "^5.0.2",
     "@types/sinon-chai": "^3.2.0",
     "chai": "^4.1.2",
@@ -50,6 +51,7 @@
     "mocha-suite": "^1.0.11",
     "nyc": "^13.0.1",
     "prettier": "^1.14.3",
+    "ramda": "^0.26.1",
     "sinon": "^6.3.4",
     "sinon-chai": "^3.2.0",
     "ts-node": "^7.0.1",
@@ -63,6 +65,7 @@
   "dependencies": {
     "@types/escape-string-regexp": "^1.0.0",
     "@types/node": "^10.11.0",
-    "escape-string-regexp": "^1.0.5"
+    "escape-string-regexp": "^1.0.5",
+    "url": "^0.11.0"
   }
 }

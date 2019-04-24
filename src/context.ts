@@ -134,6 +134,14 @@ class Context<Ctx extends object> {
       [key]: typeof middlewareOrValue === 'function' ? middlewareOrValue(req[key], ctx) : middlewareOrValue,
     }));
   }
+
+  clone(): Context<Ctx> {
+    const context = new Context<Ctx>();
+    context.middleware = [...this.middleware];
+    context.uriTransform = this.uriTransform;
+
+    return context;
+  }
 }
 
 namespace Context {

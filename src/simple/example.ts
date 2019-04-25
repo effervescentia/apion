@@ -27,32 +27,31 @@ const admin = apion.config().url('admin/v2');
 const merchandising = apion.config().url('api/v2');
 
 const login = apion
-  .action('login', (email: string, password: string) => ({ email, password }))
-  .inherit(json)
-  .inherit(merchandising)
+  .action('login', (email: string, password: string) => (api) => api.body({ email, password }))
+  .use(json)
+  .use(merchandising)
   .url('login')
-  .post()
-  .request((_, { email, password }) => ({ email, password }));
+  .post();
 
 const grove = apion
   .action('grove')
-  .inherit(json)
-  .inherit(admin)
+  .use(json)
+  .use(admin)
   .url('grove');
 
 const simpleSearchBuilder = apion.builder().with('query', (query: string) => ({ query }));
 
 const searchPreviewBuilder = apion
   .builder()
-  .inherit(simpleSearchBuilder)
+  .use(simpleSearchBuilder)
   .with('collection', (collection: string) => ({ collection }))
   .with('fields', (fields: string[]) => ({ fields }))
-  .with<'pageSize', number>('pageSize');
+  .with<'pageSize', [number]>('pageSize');
 
 const searchPreview = apion
   .action('searchPreview', searchPreviewBuilder)
-  .inherit(json)
-  .inherit(merchandising)
+  .use(json)
+  .use(merchandising)
   .url('proxy/search')
   .post();
 

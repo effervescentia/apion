@@ -38,6 +38,7 @@
   },
   "devDependencies": {
     "@types/chai": "^4.1.5",
+    "@types/fetch-mock": "^7.2.3",
     "@types/mocha": "^5.2.5",
     "@types/ramda": "^0.26.8",
     "@types/sinon": "^5.0.2",
@@ -45,6 +46,7 @@
     "chai": "^4.1.2",
     "condition-circle": "^2.0.1",
     "cz-conventional-changelog": "^2.1.0",
+    "fetch-mock": "^7.3.3",
     "husky": "^1.0.0-rc.15",
     "lint-staged": "^7.3.0",
     "mocha": "^5.2.0",
@@ -65,6 +67,7 @@
   "dependencies": {
     "@types/escape-string-regexp": "^1.0.0",
     "@types/node": "^10.11.0",
+    "cross-fetch": "^3.0.2",
     "escape-string-regexp": "^1.0.5",
     "url": "^0.11.0"
   }

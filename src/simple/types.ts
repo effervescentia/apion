@@ -12,6 +12,11 @@ export enum ClientType {
   CONFIG,
 }
 
+export enum Phase {
+  PARSE,
+  FORMAT,
+}
+
 export enum Method {
   GET = 'GET',
   POST = 'POST',
@@ -25,4 +30,5 @@ export interface Request {
   headers: Record<string, string>;
   method: Method;
   body: any;
+  middleware: [Phase, Transformer<any, any>][];
 }

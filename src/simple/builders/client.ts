@@ -1,9 +1,17 @@
 // tslint:disable:variable-name
-import Context, { RequestContext } from '../context';
-import { ClientType, Method, Named, Request, Transformer } from '../types';
-import RequestBuilder from './request';
+import _fetch from 'cross-fetch';
+import { compose } from 'ramda';
+
+import { ClientType, Named, Phase, Transformer } from '../types';
+import { fromEntries } from '../utils';
+import ConfigBuilder from './config';
+import RequestBuilder, { RequestBuilderInstance } from './request';
 
 export type ContextualHandler<C, T, R = T> = ((prev: T, ctx: C) => R) | R;
+
+export type Constructor<K extends string, T extends any[], R extends object> =
+  | ((...args: T) => R)
+  | ((...args: T) => <S extends Record<string, any>>(builder: ClientBuilder<R, K, {}>) => ClientBuilder<R, K, S>);
 
 export interface ClientMiddleware {
   formatters: Transformer<any, any>[];
@@ -15,77 +23,29 @@ export default class ClientBuilder<
   K extends string,
   X extends Record<string, ClientBuilder<any, string, any>>,
   A extends any[] = never
-> implements Named<K> {
-  private _ctx: Context<C> = new Context();
-  private _request: RequestContext = new RequestContext();
-  private _middleware: ClientMiddleware = { formatters: [], parsers: [] };
+> extends ConfigBuilder<C> implements Named<K> {
   private _children: X = {} as X;
 
-  constructor(public type: ClientType, public name?: K, public ctor?: ((...args: A) => any) | RequestBuilder<any>) {}
+  private get wrappedConstructor() {
+    return (...args: A) => {
+      const context = (this.ctor as (...args: A) => any)(...args);
 
-  url(_url: ContextualHandler<C, string>) {
-    const url = this.resolveHandler('url', _url);
-    if (typeof url === 'string' && url.length !== 0) {
-      if (url[0] === '/') {
+      if (typeof context === 'function') {
+        context(this);
       } else {
+        this._ctx.update(context);
       }
-    }
-
-    return this;
+    };
   }
 
-  method(_method: ContextualHandler<C, Method>) {
-    this._request.method(this.resolveHandler('method', _method));
-
-    return this;
-  }
-  get() {
-    return this.method(Method.GET);
-  }
-  post() {
-    return this.method(Method.POST);
-  }
-  patch() {
-    return this.method(Method.PATCH);
-  }
-  put() {
-    return this.method(Method.PUT);
-  }
-  delete() {
-    return this.method(Method.DELETE);
+  constructor(type: ClientType, public name?: K, public ctor?: Constructor<K, A, any> | RequestBuilder<any>) {
+    super(type);
   }
 
-  headers(_headers: ContextualHandler<C, Record<string, string>>) {
-    this._request.headers(this.resolveHandler('headers', _headers));
+  use(builder: ConfigBuilder<any>) {
+    super.use(builder);
 
-    return this;
-  }
-
-  request<T>(_body: ContextualHandler<C, unknown, T>) {
-    this._request.body(this.resolveHandler('body', _body));
-
-    return this;
-  }
-
-  parser<T, R>(parser: Transformer<T, R>) {
-    this._middleware.parsers.push(parser);
-
-    return this;
-  }
-
-  formatter<T, R>(formatter: Transformer<T, R>) {
-    this._middleware.formatters.push(formatter);
-
-    return this;
-  }
-
-  // local(builder: ClientBuilder<any, any>) {
-  //   return this;
-  // }
-
-  inherit(builder: ClientBuilder<any, any, any>) {
-    this._ctx.inherit(builder._ctx);
-    this._request.inherit(builder._request);
+    Object.values(this._children).forEach((child) => child.use(builder));
 
     return this;
   }
@@ -102,22 +62,21 @@ export default class ClientBuilder<
     builder?: ClientBuilder<D, string, Y>
   ) {
     if (typeof builderOrName === 'string' && builder) {
-      builder.inherit(this);
+      builder.use(this);
       this._children = { ...this._children, [builderOrName]: builder };
     } else {
       const namedBuilder = builderOrName as ClientBuilder<D, L, Y>;
 
-      namedBuilder.inherit(this);
+      namedBuilder.use(this);
       this._children = { ...this._children, [namedBuilder.name!]: namedBuilder };
     }
 
     return this;
   }
 
-  build() {
-    const children = Object.entries(this._children).reduce(
-      (acc, [key, value]) => ({ ...acc, [key]: value.build() }),
-      {}
+  build(fetch: typeof _fetch = _fetch) {
+    const children: Record<keyof X, any> = fromEntries<keyof X, any>(
+      Object.entries(this._children).map(([key, value]) => [key, value.build(fetch)])
     );
 
     let client = null;
@@ -126,31 +85,72 @@ export default class ClientBuilder<
       case ClientType.ACTION:
         if (this.ctor) {
           if (this.ctor instanceof RequestBuilder) {
+            client = Object.assign(
+              (
+                handlerOrValue:
+                  | ((builder: RequestBuilderInstance<any>) => RequestBuilderInstance<any> | object)
+                  | object
+              ) => {
+                if (typeof handlerOrValue === 'function') {
+                  const BuilderClazz = (this.ctor as RequestBuilder<any>).build();
+                  const builderInstance = new BuilderClazz();
+                  const body = handlerOrValue(builderInstance);
+
+                  this.body(body instanceof RequestBuilderInstance ? body.build() : body);
+                } else {
+                  this.body(handlerOrValue);
+                }
+
+                const { url, headers, method, body, middleware } = this._request.resolve();
+
+                const formatters = middleware
+                  .filter(([phase]) => phase === Phase.FORMAT)
+                  .map(([_, formatter]) => formatter);
+
+                return fetch(url, { headers, method, body: (compose as any)(...formatters)(body) });
+              },
+              children
+            );
           } else {
-            client = (...args: A) => ((this.ctor as (...args: A) => any)(...args), children);
+            client = Object.assign((...args: A) => {
+              this.wrappedConstructor(...args);
+
+              const { url, headers, method, body, middleware } = this._request.resolve();
+
+              const formatters = middleware
+                .filter(([phase]) => phase === Phase.FORMAT)
+                .map(([_, formatter]) => formatter);
+
+              return fetch(url, { headers, method, body: (compose as any)(...formatters)(body) });
+            }, children);
           }
+        } else {
+          client = Object.assign(() => {
+            const { url, headers, method, body, middleware } = this._request.resolve();
+
+            const formatters = middleware
+              .filter(([phase]) => phase === Phase.FORMAT)
+              .map(([_, formatter]) => formatter);
+
+            return fetch(url, { headers, method, body: (compose as any)(...formatters)(body) });
+          }, children);
         }
         break;
       case ClientType.GROUP:
         if (this.ctor) {
-          client = (...args: A) => ((this.ctor as (...args: A) => any)(...args), children);
+          client = (...args: A) => {
+            this.wrappedConstructor(...args);
+
+            return children;
+          };
+        } else {
+          client = children;
         }
         break;
       case ClientType.CONFIG:
+        throw new Error('cannot call build() on configuration builders');
     }
-    // const client =
-    //   this.type === ClientType.GROUP && this.ctor && !(this.ctor instanceof RequestBuilder)
-    //     ? (...args: any[]) => (this.ctor!(...args), children)
-    //     : Object.assign(this.ctor || {}, this._children);
 
     return client;
-  }
-
-  private resolveHandler<T>(name: keyof Request, handler: ContextualHandler<C, T>) {
-    if (typeof handler === 'function') {
-      return (handler as (prev: T, ctx: C) => T)(this._request.resolve()[name], this._ctx.resolve());
-    }
-
-    return handler;
   }
 }

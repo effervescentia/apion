@@ -1,4 +1,5 @@
-import ClientBuilder from './builders/client';
+import ClientBuilder, { Constructor } from './builders/client';
+import ConfigBuilder from './builders/config';
 import RequestBuilder from './builders/request';
 import { ClientType } from './types';
 
@@ -7,16 +8,19 @@ export function builder() {
 }
 
 export function config() {
-  return new ClientBuilder(ClientType.CONFIG);
+  return new ConfigBuilder();
 }
 
-export function group<K extends string, T extends any[], R extends object>(name: K, ctor?: (...args: T) => R) {
-  return new ClientBuilder<R, K, {}>(ClientType.GROUP, name, ctor);
+export function group<K extends string, T extends any[], R extends object>(
+  name: K,
+  ctor?: Constructor<K, T, R>
+): ClientBuilder<R, K, {}> {
+  return new ClientBuilder(ClientType.GROUP, name, ctor);
 }
 
 export function action<K extends string, T extends any[], R extends object>(
   name: K,
-  ctor?: ((...args: T) => R) | RequestBuilder<R>
-) {
-  return new ClientBuilder<R, K, {}>(ClientType.ACTION, name, ctor);
+  ctorOrBuilder?: Constructor<K, T, R> | RequestBuilder<R>
+): ClientBuilder<R, K, {}> {
+  return new ClientBuilder(ClientType.ACTION, name, ctorOrBuilder);
 }

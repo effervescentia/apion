@@ -10,8 +10,8 @@ export function builder<T extends object>(formatter?: Transformer<T>) {
   return new RequestBuilder<T>(formatter);
 }
 
-export function config<T extends object>() {
-  return new ConfigBuilder<T>();
+export function config<T extends object, K extends string = string>(name?: K) {
+  return new ConfigBuilder<T, K>(name);
 }
 
 export function group<K extends string, T extends any[], R extends object>(

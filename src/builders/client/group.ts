@@ -1,8 +1,6 @@
 // tslint:disable:variable-name
 import _fetch from 'cross-fetch';
 
-import Context from '../../context';
-import { Named } from '../../types';
 import { fromEntries } from '../../utils';
 import RequestBuilder from '../request';
 import ConfigBuilder, { ContextualBuilder } from './config';
@@ -16,26 +14,23 @@ export default class GroupBuilder<
   K extends string,
   X extends Record<string, GroupBuilder<any, string, any>>,
   A extends any[] = never
-> extends ConfigBuilder<C> implements Named<K> {
+> extends ConfigBuilder<C, K> {
   private _children: X = {} as X;
 
   protected get wrappedConstructor() {
     return (...args: A) => {
       const context = (this.ctor as (...args: A) => any)(...args);
-      // console.log('ctor', { context });
 
       if (typeof context === 'function') {
-        // console.log('abc', this._ctx);
         context(this);
       } else {
-        // console.log('def', this._ctx);
         this._ctx.update(context);
       }
     };
   }
 
-  constructor(public name?: K, public ctor?: Constructor<K, A, any> | RequestBuilder<any>) {
-    super();
+  constructor(name?: K, public ctor?: Constructor<K, A, any> | RequestBuilder<any>) {
+    super(name);
   }
 
   use(builder: ContextualBuilder<C>) {
@@ -72,8 +67,6 @@ export default class GroupBuilder<
 
   build(fetch: typeof _fetch = _fetch) {
     const children = this.buildChildren(fetch);
-
-    // console.log({ children });
 
     if (this.ctor) {
       return (...args: A) => {

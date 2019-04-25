@@ -1,5 +1,4 @@
 // tslint:disable:variable-name
-import { compose } from 'ramda';
 import * as URL from 'url';
 
 import Context from '.';

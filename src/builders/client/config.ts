@@ -2,15 +2,17 @@
 import { Method } from '../../constants';
 import Context from '../../context';
 import RequestContext from '../../context/request';
-import { Phase, Transformer } from '../../types';
+import { Named, Phase, Transformer } from '../../types';
 
 export type ContextualHandler<C, T, R = T> = ((prev: T, ctx: C) => R) | R;
 
-export type ContextualBuilder<C extends object> = ((ctx: C) => ConfigBuilder<any>) | ConfigBuilder<any>;
+export type ContextualBuilder<C extends object> = ((ctx: C) => ConfigBuilder<any, string>) | ConfigBuilder<any, string>;
 
-export default class ConfigBuilder<C extends object> {
+export default class ConfigBuilder<C extends object, K extends string> implements Named<K> {
   protected _ctx: Context<C> = new Context();
   protected _request: RequestContext = new RequestContext();
+
+  constructor(public name?: K) {}
 
   url(url: ContextualHandler<C, string>) {
     this._request.url(this.resolver(url));
@@ -106,13 +108,10 @@ export default class ConfigBuilder<C extends object> {
 }
 
 export function wrapDynamicTransform<C>(
-  builder: ((ctx: C) => ConfigBuilder<any>) | ConfigBuilder<any>,
-  extract: (builer: ConfigBuilder<any>) => Context<any>
+  builder: ((ctx: C) => ConfigBuilder<any, string>) | ConfigBuilder<any, string>,
+  extract: (builer: ConfigBuilder<any, string>) => Context<any>
 ) {
   return builder instanceof ConfigBuilder
     ? extract(builder)
-    : (prev: any, ctx: C) => {
-        debugger;
-        return console.error({ ctx }), extract(builder(ctx)).resolve(ctx, prev);
-      };
+    : (prev: any, ctx: C) => extract(builder(ctx)).resolve(ctx, prev);
 }

@@ -6,8 +6,6 @@ export interface Named<T extends string> {
   name?: T;
 }
 
-export type NameOf<T> = T extends Named<infer R> ? R : never;
-
 export enum Phase {
   PARSE,
   FORMAT,

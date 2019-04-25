@@ -47,74 +47,75 @@ suite('Apion', () => {
       );
 
     const adminPath = apion.config().path('admin/v2');
-    // const merchandisingPath = apion.config().path('api/v2');
+    const merchandisingPath = apion.config().path('api/v2');
     const tokenAuth = ({ token }: { token: string }) =>
       apion.config<{ token: string }>().headers({ Authorization: token });
 
-    // const login = apion
-    //   .action('login', (email: string, password: string) => (api) => api.body({ email, password }))
-    //   .use(json)
-    //   .use(merchandisingPath)
-    //   .path('login')
-    //   .post();
+    const login = apion
+      .action('login', (email: string, password: string) => (api) => api.body({ email, password }))
+      .use(json)
+      .use(merchandisingPath)
+      .path('login')
+      .post();
 
-    // const validatePassword = apion
-    //   .action('validatePassword', (password: string) => (api) => api.body(password))
-    //   .use(merchandisingPath)
-    //   .path('password/validate')
-    //   .post();
+    const validatePassword = apion
+      .action('validatePassword', (password: string) => (api) => api.body(password))
+      .use(merchandisingPath)
+      .path('password/validate')
+      .post();
 
     const grove = apion
-      .action('grove')
+      .action<'grove', never, { token: string }>('grove')
       .use(json)
       .use(adminPath)
       .use(tokenAuth)
       .path('grove');
 
-    // const simpleSearchBuilder = apion.builder().with<'query', [string]>('query');
+    const simpleSearchBuilder = apion.builder().with<'query', [string]>('query');
 
-    // const searchPreviewBuilder = apion
-    //   .builder()
-    //   .use(simpleSearchBuilder)
-    //   .with<'collection', [string]>('collection')
-    //   .with('fields', (...fields: string[]) => ({ fields }))
-    //   .with<'pageSize', [number]>('pageSize');
+    const searchPreviewBuilder = apion
+      .builder()
+      .use(simpleSearchBuilder)
+      .with<'collection', [string]>('collection')
+      .with('fields', (...fields: string[]) => ({ fields }))
+      .with<'pageSize', [number]>('pageSize');
 
-    // const searchPreview = apion
-    //   .action('searchPreview', searchPreviewBuilder)
-    //   // .use(json)
-    //   // .use(merchandisingPath)
-    //   .use(tokenAuth);
-    // // .path('proxy/search')
-    // // .post();
+    const searchPreview = apion
+      .action<'searchPreview', any[], any>('searchPreview', searchPreviewBuilder)
+      .use(json)
+      .use(merchandisingPath)
+      .use(tokenAuth)
+      .path('proxy/search')
+      .post();
 
-    const auth = apion.group('auth', (token: string) => ({ token })).nest(grove);
-    // .nest('search', searchPreview);
+    const auth = apion
+      .group('auth', (token: string) => ({ token }))
+      .nest(grove)
+      .nest('search', searchPreview);
 
     const root = apion
       .group('groupby', (customer: string) => ({ customer }))
       .url((_, { customer }) => `https://${customer}.groupbycloud.com`)
-      // .nest(login)
-      // .nest(validatePassword)
+      .nest(login)
+      .nest(validatePassword)
       .nest(auth);
 
     const client: any = root.build(mock);
 
     const configuredClient = client(CUSTOMER);
 
-    // expect(Object.keys(configuredClient)).to.have.members(['login', 'validatePassword', 'auth']);
+    expect(Object.keys(configuredClient)).to.have.members(['login', 'validatePassword', 'auth']);
 
-    // const loginRes = await configuredClient.login(EMAIL, PASSWORD);
-    // expect(loginRes).to.eql({ status: 200, body: '', headers: {}, ok: true });
+    const loginRes = await configuredClient.login(EMAIL, PASSWORD);
+    expect(loginRes).to.eql({ status: 200, body: '', headers: {}, ok: true });
 
-    // const validatePwdRes = await configuredClient.validatePassword(PASSWORD);
-    // expect(validatePwdRes.ok).to.be.true;
+    const validatePwdRes = await configuredClient.validatePassword(PASSWORD);
+    expect(validatePwdRes.ok).to.be.true;
 
     const authClient = configuredClient.auth(TOKEN);
 
-    // expect(Object.keys(authClient)).to.have.members(['grove', 'search']);
+    expect(Object.keys(authClient)).to.have.members(['grove', 'search']);
 
-    debugger;
     const groveRes = await authClient.grove();
     expect(groveRes).to.eql({
       status: 200,
@@ -123,23 +124,23 @@ suite('Apion', () => {
       ok: true,
     });
 
-    // const searchRes1 = await authClient.search((builder: any) =>
-    //   builder
-    //     .query('shoe')
-    //     .fields('title', 'price')
-    //     .pageSize(2)
-    // );
-    // const searchRes2 = await authClient.search((builder: any) =>
-    //   builder
-    //     .query('shoe')
-    //     .fields('title', 'price')
-    //     .pageSize(2)
-    //     .build()
-    // );
-    // const searchRes3 = await authClient.search({ query: 'shoe', fields: ['title', 'price'], pageSize: 2 });
+    const searchRes1 = await authClient.search((builder: any) =>
+      builder
+        .query('shoe')
+        .fields('title', 'price')
+        .pageSize(2)
+    );
+    const searchRes2 = await authClient.search((builder: any) =>
+      builder
+        .query('shoe')
+        .fields('title', 'price')
+        .pageSize(2)
+        .build()
+    );
+    const searchRes3 = await authClient.search({ query: 'shoe', fields: ['title', 'price'], pageSize: 2 });
 
-    // expect(searchRes1.ok).to.be.true;
-    // expect(searchRes2.ok).to.be.true;
-    // expect(searchRes3.ok).to.be.true;
+    expect(searchRes1.ok).to.be.true;
+    expect(searchRes2.ok).to.be.true;
+    expect(searchRes3.ok).to.be.true;
   });
 });

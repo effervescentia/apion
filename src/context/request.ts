@@ -2,59 +2,24 @@
 import { compose } from 'ramda';
 import * as URL from 'url';
 
-import { Method, Phase, Request, Transformer } from './types';
+import Context from '.';
+import { Method } from '../constants';
+import { Phase, Request, Transformer } from '../types';
+import { fromEntries } from '../utils';
 
 export type Updater<T> = Transformer<T | undefined, T> | T;
 
-export default class Context<T extends object> {
-  constructor(private _trfms: ((prev: Partial<T>) => Partial<T>)[] = [], public parent?: Context<any>) {}
-
-  set<K extends keyof T>(name: K, value: ((value?: T[K]) => T[K]) | T[K]) {
-    this._trfms = [
-      ...this._trfms,
-      (prev) => ({
-        ...prev,
-        [name]: typeof value === 'function' ? (value as (value?: T[K]) => T[K])(prev[name]) : value,
-      }),
-    ];
-
-    return this;
-  }
-
-  update(value: ((prev: Partial<T>) => Partial<T>) | Partial<T>) {
-    this._trfms = [...this._trfms, (prev) => (typeof value === 'function' ? value(prev) : { ...prev, ...value })];
-
-    return this;
-  }
-
-  inherit<P extends object>(ctx: Context<P>, hoist = false): Context<P & T> {
-    if (this.parent) {
-      if (hoist) {
-        this.parent.inherit(ctx, true);
-      } else {
-        this.parent = ctx.clone();
-      }
-    } else {
-      this.parent = ctx.clone();
-    }
-
-    return this as any;
-  }
-
-  resolve(): T {
-    const initialValue = this.parent ? this.parent.resolve() : {};
-
-    return this._trfms.length ? (compose as any)(...this._trfms)(initialValue) : initialValue;
-  }
-
-  clone(): Context<T> {
-    return new Context(this._trfms, this.parent && this.parent.clone());
-  }
+export function normalizeHeaders(headers: Record<string, string>): Record<string, string> {
+  return fromEntries(Object.entries(headers).map(([key, value]) => [key.toLowerCase(), value]));
 }
 
-export class RequestContext extends Context<Request> {
+export default class RequestContext extends Context<Request> {
   headers(headers: Updater<Record<string, string>>) {
-    return this.set('headers', (prev) => (typeof headers === 'function' ? headers(prev!) : { ...prev, ...headers }));
+    return this.set(
+      'headers',
+      (prev) =>
+        typeof headers === 'function' ? normalizeHeaders(headers(prev!)) : { ...prev, ...normalizeHeaders(headers) }
+    );
   }
 
   body(body: Updater<any>) {
@@ -114,7 +79,7 @@ export class RequestContext extends Context<Request> {
     });
   }
 
-  middleware(phase: Phase, middleware: Transformer<any, any>) {
-    return this.set('middleware', (prev) => [...(prev || []), [phase, middleware] as [Phase, Transformer<any, any>]]);
+  middleware(phase: Phase, middleware: Transformer<any>) {
+    return this.set('middleware', (prev) => [...(prev || []), [phase, middleware] as [Phase, Transformer<any>]]);
   }
 }

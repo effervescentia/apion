@@ -1,14 +1,16 @@
 // tslint:disable:variable-name
-import Context, { RequestContext } from '../context';
-import { ClientType, Method, Phase, Transformer } from '../types';
+import { Method } from '../../constants';
+import Context from '../../context';
+import RequestContext from '../../context/request';
+import { Phase, Transformer } from '../../types';
 
 export type ContextualHandler<C, T, R = T> = ((prev: T, ctx: C) => R) | R;
+
+export type ContextualBuilder<C extends object> = ((ctx?: C) => ConfigBuilder<any>) | ConfigBuilder<any>;
 
 export default class ConfigBuilder<C extends object> {
   protected _ctx: Context<C> = new Context();
   protected _request: RequestContext = new RequestContext();
-
-  constructor(public type: ClientType = ClientType.CONFIG) {}
 
   url(url: ContextualHandler<C, string>) {
     this._request.url(this.resolver(url));
@@ -83,9 +85,9 @@ export default class ConfigBuilder<C extends object> {
   //   return this;
   // }
 
-  use(builder: ConfigBuilder<any>) {
-    this._ctx.inherit(builder._ctx, true);
-    this._request.inherit(builder._request, true);
+  use(contextualBuilder: ContextualBuilder<C>) {
+    this._ctx.inherit(this.wrapDynamicTransform(contextualBuilder, (builder) => builder._ctx));
+    this._request.inherit(this.wrapDynamicTransform(contextualBuilder, (builder) => builder._request));
 
     return this;
   }
@@ -97,5 +99,14 @@ export default class ConfigBuilder<C extends object> {
         : merge
           ? merge(prev!, handler)
           : handler;
+  }
+
+  private wrapDynamicTransform(
+    builder: ((ctx?: C) => ConfigBuilder<any>) | ConfigBuilder<any>,
+    extract: (builer: ConfigBuilder<any>) => Context<any>
+  ) {
+    return builder instanceof ConfigBuilder
+      ? extract(builder)
+      : (prev: any, ctx?: C) => extract(builder(ctx)).resolve(prev, ctx);
   }
 }

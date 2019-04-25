@@ -7,7 +7,7 @@ import ConfigBuilder, { ContextualBuilder } from './config';
 
 export type Constructor<K extends string, T extends any[], R extends object> =
   | ((...args: T) => R)
-  | ((...args: T) => <S extends Record<string, any>>(builder: GroupBuilder<R, K, {}>) => GroupBuilder<R, K, S>);
+  | ((...args: T) => <S extends Record<string, any>>(builder: GroupBuilder<R, K, {}>) => GroupBuilder<any, K, S>);
 
 export default class GroupBuilder<
   C extends object,

@@ -8,6 +8,15 @@ export type ContextualHandler<C, T, R = T> = ((prev: T, ctx: C) => R) | R;
 
 export type ContextualBuilder<C extends object> = ((ctx: C) => ConfigBuilder<any, string>) | ConfigBuilder<any, string>;
 
+export function wrapDynamicTransform<C>(
+  builder: ((ctx: C) => ConfigBuilder<any, string>) | ConfigBuilder<any, string>,
+  extract: (builer: ConfigBuilder<any, string>) => Context<any>
+) {
+  return builder instanceof ConfigBuilder
+    ? extract(builder)
+    : (prev: any, ctx: C) => extract(builder(ctx)).resolve(ctx, prev);
+}
+
 export default class ConfigBuilder<C extends object, K extends string> implements Named<K> {
   protected _ctx: Context<C> = new Context();
   protected _request: RequestContext = new RequestContext();
@@ -105,13 +114,4 @@ export default class ConfigBuilder<C extends object, K extends string> implement
           ? merge(prev!, handler)
           : handler;
   }
-}
-
-export function wrapDynamicTransform<C>(
-  builder: ((ctx: C) => ConfigBuilder<any, string>) | ConfigBuilder<any, string>,
-  extract: (builer: ConfigBuilder<any, string>) => Context<any>
-) {
-  return builder instanceof ConfigBuilder
-    ? extract(builder)
-    : (prev: any, ctx: C) => extract(builder(ctx)).resolve(ctx, prev);
 }

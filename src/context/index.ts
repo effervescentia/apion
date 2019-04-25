@@ -3,7 +3,7 @@ import { compose } from 'ramda';
 
 import { Transformer } from '../types';
 
-export type ContextualTransformer<C extends object, T, R = T> = (prev: T, ctx?: Context<C>) => R;
+export type ContextualTransformer<C extends object, T, R = T> = (prev: T, ctx: C) => R;
 
 export default class Context<T extends object> {
   constructor(
@@ -15,7 +15,7 @@ export default class Context<T extends object> {
     // console.log('setting', name, value);
     this._trfms.push((prev) => ({
       ...prev,
-      [name]: typeof value === 'function' ? (value as ContextualTransformer<any, T[K]>)(prev[name]!) : value,
+      [name]: typeof value === 'function' ? (value as ContextualTransformer<any, T[K]>)(prev[name]!, null) : value,
     }));
 
     return this;
@@ -30,30 +30,40 @@ export default class Context<T extends object> {
   }
 
   inherit<P extends object>(ctx: ContextualTransformer<any, T, Context<P>> | Context<P>): Context<P & T> {
-    this.parents.push(typeof ctx === 'function' ? [ctx] : ctx._trfms);
+    this.parents.push(...(typeof ctx === 'function' ? [[ctx]] : [...ctx.parents, ctx._trfms]));
 
     return this as any;
   }
 
-  resolve(initialValue = {}, ctx?: any): T {
+  resolve(ctx: any = null, initialValue = {}): T {
     const allTrfms = [...this.parents, this._trfms];
-    console.log('resolving', { initialValue, ctx });
+    debugger;
+    const tag = this['__proto__'].constructor === Context ? 'CONTEXT' : 'REQUEST';
+    console.log(`resolving ${tag}`, {
+      allTrfms,
+      initialValue,
+      ctx,
+    });
     const res = (compose as any)(...allTrfms.map(this.composeTransforms(ctx)))(initialValue);
-    // console.log('resolved!', res);
+    console.log(`resolved ${tag}!`, res);
     return res;
   }
 
-  private composeTransforms(ctx?: any) {
-    return (trfms: ContextualTransformer<any, any>[]) => (initialValue: any) =>
-      trfms.length
-        ? (compose as any)(
-            ...trfms.map((trfm) => (x: any) => {
-              // console.log('before', x);
-              const y = trfm(x, ctx);
-              // console.log('after', y);
-              return y;
-            })
-          )(initialValue)
-        : initialValue;
+  private composeTransforms(ctx: any) {
+    return (trfms: ContextualTransformer<any, any>[]) => (initialValue: any) => (
+      console.log({ from: initialValue }),
+      ((x) => (console.log({ to: x }), x))(
+        trfms.length
+          ? (compose as any)(
+              ...trfms.map((trfm) => (x: any) => {
+                console.log('before', x);
+                const y = trfm(x, ctx);
+                console.log('after', y);
+                return y;
+              })
+            )(initialValue)
+          : initialValue
+      )
+    );
   }
 }

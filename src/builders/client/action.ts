@@ -48,10 +48,19 @@ export default class ActionBuilder<
   }
 
   private async send(fetch: typeof _fetch) {
+    console.log('sending', { context: this._ctx.resolve() });
+    console.log('ok');
     const { url, headers, method, body, middleware = [] } = this._request.resolve(this._ctx.resolve());
 
     const formatters = middleware.filter(([phase]) => phase === Phase.FORMAT).map(([_, formatter]) => formatter);
     const parsers = middleware.filter(([phase]) => phase === Phase.PARSE).map(([_, parser]) => parser);
+
+    console.log('fetch', {
+      url,
+      headers,
+      method,
+      body: formatters.length ? (compose as any)(...formatters)(body) : body,
+    });
 
     const res = await fetch(url, {
       headers,

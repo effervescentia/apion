@@ -48,7 +48,7 @@ suite('Apion', () => {
 
     const adminPath = apion.config().path('admin/v2');
     // const merchandisingPath = apion.config().path('api/v2');
-    const tokenAuth = ({ token }: { token: string } = { token: 'abc' }) =>
+    const tokenAuth = ({ token }: { token: string }) =>
       apion.config<{ token: string }>().headers({ Authorization: token });
 
     // const login = apion

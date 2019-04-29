@@ -47,6 +47,11 @@ export default class ActionBuilder<
     return Object.assign(() => this.send(fetch), children);
   }
 
+  protected shallowClone<T extends this>(): T {
+    console.log('cloning action', this);
+    return new ActionBuilder(this.name, this.ctor) as any;
+  }
+
   private async send(fetch: typeof _fetch) {
     const { url, headers, method, body, middleware = [] } = this._request.resolve(this._ctx.resolve());
 

@@ -9,23 +9,34 @@ export type Constructor<K extends string, T extends any[], R extends object> =
   | ((...args: T) => R)
   | ((...args: T) => <S extends Record<string, any>>(builder: GroupBuilder<R, K, {}>) => GroupBuilder<any, K, S>);
 
+export interface NestingBuilder<C extends object, K extends string, T extends Record<string, any>, A extends any[]> {
+  build(fetch?: typeof _fetch): ((...args: A) => Record<keyof T, any>) | Record<keyof T, any>;
+
+  use(builder: ContextualBuilder<C>): this;
+}
+
 export default class GroupBuilder<
   C extends object,
   K extends string,
-  X extends Record<string, GroupBuilder<any, string, any>>,
+  X extends Record<string, NestingBuilder<any, string, any, any>>,
   A extends any[] = never
-> extends ConfigBuilder<C, K> {
+> extends ConfigBuilder<C, K> implements NestingBuilder<C, K, X, A> {
   private _children: X = {} as X;
 
   protected get wrappedConstructor() {
     return (...args: A) => {
       const context = (this.ctor as (...args: A) => any)(...args);
 
+      this.setTemporal(true);
       if (typeof context === 'function') {
+        // const clone = new GroupBuilder();
+        // context(clone);
+        // this.use(clone);
         context(this);
       } else {
         this._ctx.update(context);
       }
+      this.setTemporal(false);
     };
   }
 
@@ -41,16 +52,16 @@ export default class GroupBuilder<
     return this;
   }
 
-  nest<D extends object, L extends string, Y extends Record<string, GroupBuilder<any, string, any>>>(
+  nest<D extends object, L extends string, Y extends Record<string, NestingBuilder<any, string, any, any>>>(
     name: L,
-    builder: GroupBuilder<D, string, Y>
-  ): GroupBuilder<C, K, X & Record<L, GroupBuilder<D, string, Y>>>;
-  nest<D extends object, L extends string, Y extends Record<string, GroupBuilder<any, string, any>>>(
-    builder: GroupBuilder<D, L, Y>
-  ): GroupBuilder<C, K, X & Record<L, GroupBuilder<D, string, Y>>>;
-  nest<D extends object, L extends string, Y extends Record<string, GroupBuilder<any, string, any>>>(
+    builder: NestingBuilder<D, string, Y, any>
+  ): GroupBuilder<C, K, X & Record<L, NestingBuilder<D, string, Y, any>>>;
+  nest<D extends object, L extends string, Y extends Record<string, NestingBuilder<any, string, any, any>>>(
+    builder: NestingBuilder<D, L, Y, any>
+  ): GroupBuilder<C, K, X & Record<L, NestingBuilder<D, L, Y, any>>>;
+  nest<D extends object, L extends string, Y extends Record<string, NestingBuilder<any, string, any, any>>>(
     builderOrName: L | GroupBuilder<D, L, Y>,
-    builder?: GroupBuilder<D, string, Y>
+    builder?: NestingBuilder<D, L, Y, any>
   ) {
     if (typeof builderOrName === 'string' && builder) {
       builder.use(this);
@@ -79,7 +90,25 @@ export default class GroupBuilder<
     return children;
   }
 
+  setTemporal(temporal: boolean) {
+    this._ctx.setTemporal(temporal);
+    this._request.setTemporal(temporal);
+  }
+
   protected buildChildren(fetch: typeof _fetch): Record<keyof X, any> {
     return fromEntries<keyof X, any>(Object.entries(this._children).map(([key, value]) => [key, value.build(fetch)]));
+  }
+
+  protected shallowClone<T extends this>(): T {
+    return new GroupBuilder(this.name, this.ctor) as any;
+  }
+
+  protected clone() {
+    const clone = this.shallowClone();
+    clone._children = { ...this._children };
+    clone._ctx = this._ctx.clone();
+    clone._request = this._request.clone();
+
+    return clone;
   }
 }

@@ -1,28 +1,48 @@
 // tslint:disable:variable-name
 import { compose } from 'ramda';
 
+import { Transformer } from '../types';
+
 export type ContextualTransformer<C extends object, T, R = T> = (prev: T, ctx: C) => R;
 
-export default class Context<T extends object> {
-  constructor(private _trfms: ContextualTransformer<any, Partial<T>>[] = [], public parents: Context<any>[] = []) {}
+export const TEMPORAL = Symbol();
 
-  set<K extends keyof T>(name: K, value: ContextualTransformer<any, T[K]> | T[K]) {
-    this._trfms.push((prev) => ({
+export interface Resolvable<T extends object> {
+  resolve(ctx?: any, initialValue?: any): T;
+  clone<S extends this>(): S;
+}
+
+export default class Context<T extends object> implements Resolvable<T> {
+  private temporal: boolean = false;
+
+  constructor(private _trfms: ContextualTransformer<any, Partial<T>>[] = [], public parents: Resolvable<any>[] = []) {}
+
+  set<K extends keyof T>(name: K, value: ContextualTransformer<any, T[K]> | T[K], temporal = this.temporal) {
+    const trfm = (prev: Partial<T>) => ({
       ...prev,
       [name]: typeof value === 'function' ? (value as ContextualTransformer<any, T[K]>)(prev[name]!, null) : value,
-    }));
+    });
+
+    this._trfms.push(this.decorate(trfm, temporal));
 
     return this;
   }
 
-  update(value: ((prev: Partial<T>) => Partial<T>) | Partial<T>) {
-    this._trfms.push((prev) => (typeof value === 'function' ? value(prev) : { ...prev, ...value }));
+  update(value: ((prev: Partial<T>) => Partial<T>) | Partial<T>, temporal = this.temporal) {
+    const trfm = (prev: Partial<T>) => (typeof value === 'function' ? value(prev) : { ...prev, ...value });
+
+    this._trfms.push(this.decorate(trfm, temporal));
 
     return this;
   }
 
-  inherit<P extends object>(ctx: ContextualTransformer<any, Partial<T>, Context<P>> | Context<P>): Context<P & T> {
-    this.parents.push(typeof ctx === 'function' ? Context.from(ctx as any) : ctx);
+  inherit<P extends object>(
+    ctx: ContextualTransformer<any, Partial<T>, Resolvable<P>> | Resolvable<P>,
+    temporal = false
+  ): Context<P & T> {
+    const parent = typeof ctx === 'function' ? Context.from(ctx as any) : ctx;
+
+    this.parents.push(this.decorate(parent, temporal));
 
     return this as any;
   }
@@ -37,7 +57,36 @@ export default class Context<T extends object> {
       : inheritedValue;
   }
 
-  static from<T extends object>(trfm: ContextualTransformer<any, Partial<T>>) {
-    return new Context<T>([trfm]);
+  clone<S extends this>(): S {
+    const clone = this.shallowClone<S>();
+    clone._trfms = [...this._trfms];
+    clone.parents = this.parents.map((parent) => parent.clone());
+
+    return clone;
+  }
+
+  setTemporal(temporal: boolean) {
+    this.temporal = temporal;
+
+    if (!temporal) {
+      console.log('temporal trfms', this._trfms.length);
+      console.log('temporal parents', this.parents.length);
+      // this._trfms.length = 0;
+      // this._trfms.push(...this._trfms.filter((trfm) => !(TEMPORAL in trfm)));
+      // this.parents.length = 0;
+      // this.parents.push(...this.parents.filter((parent) => !(TEMPORAL in parent)));
+    }
+  }
+
+  protected shallowClone<S extends this>(): S {
+    return new Context<T>() as any;
+  }
+
+  private decorate<S>(target: S, temporal: boolean) {
+    return temporal ? Object.assign(target, { [TEMPORAL]: true }) : target;
+  }
+
+  static from<T extends object>(trfm: ContextualTransformer<any, Partial<T>>): Resolvable<T> {
+    return new Context<T>([trfm]) as any;
   }
 }

@@ -4,10 +4,12 @@ import { equals } from 'ramda';
 
 import * as apion from '../src';
 import ConfigBuilder from '../src/builders/client/config';
-import { Header } from '../src/constants';
+import { Header, Method } from '../src/constants';
 import { json } from '../src/helpers';
 import suite from './suite';
 
+const MOCK_OBJ = { a: 'b' };
+const ID = 'someId';
 const CUSTOMER = 'mycustomer';
 const EMAIL = 'myEmail@test.com';
 const PASSWORD = 'myPassword';
@@ -15,6 +17,7 @@ const TOKEN = 'abc123!@#';
 const SOURCE_AREA = 'sourceArea';
 const TARGET_AREA = 'targetArea';
 const FIELD = 'myField';
+const JSON_HEADERS = { [Header.CONTENT_TYPE]: 'application/json' };
 
 suite('Apion', () => {
   it('should create a complex client', async () => {
@@ -23,7 +26,7 @@ suite('Apion', () => {
       .post(
         (url, opts) =>
           url === `https://${CUSTOMER}.groupbycloud.com/api/v2/login` &&
-          equals(opts.headers, { [Header.CONTENT_TYPE]: 'application/json' }) &&
+          equals(opts.headers, JSON_HEADERS) &&
           equals(JSON.parse(opts.body as string), { email: EMAIL, password: PASSWORD }),
         200
       )
@@ -35,13 +38,13 @@ suite('Apion', () => {
       .get(
         (url, opts) =>
           url === `https://${CUSTOMER}.groupbycloud.com/admin/v2/grove` &&
-          equals(opts.headers, { [Header.CONTENT_TYPE]: 'application/json', authorization: TOKEN }),
+          equals(opts.headers, { ...JSON_HEADERS, authorization: TOKEN }),
         { status: 200, body: JSON.stringify({ grove: 'some_grove' }) }
       )
       .post(
         (url, opts) =>
           url === `https://${CUSTOMER}.groupbycloud.com/api/v2/admin/area/promote` &&
-          equals(opts.headers, { [Header.CONTENT_TYPE]: 'application/json', authorization: TOKEN }) &&
+          equals(opts.headers, { ...JSON_HEADERS, authorization: TOKEN }) &&
           equals(JSON.parse(opts.body as string), { source: SOURCE_AREA, target: TARGET_AREA }),
         200
       )
@@ -66,14 +69,21 @@ suite('Apion', () => {
       .get(
         (url, opts) =>
           url === `https://${CUSTOMER}.groupbycloud.com/api/v2/autocomplete/values` &&
-          equals(opts.headers, { [Header.CONTENT_TYPE]: 'application/json', authorization: TOKEN }) &&
+          equals(opts.headers, { ...JSON_HEADERS, authorization: TOKEN }) &&
           equals(JSON.parse(opts.body as string), { area: SOURCE_AREA, field: FIELD }),
+        200
+      )
+      .mock(
+        (url, opts) =>
+          url === `https://${CUSTOMER}.groupbycloud.com/api/v2/key` &&
+          equals(opts.headers, { authorization: TOKEN }) &&
+          (!opts.method || [Method.GET, Method.POST, Method.DELETE].includes(opts.method as any)),
         200
       )
       .post(
         (url, opts) =>
           url === `https://${CUSTOMER}.groupbycloud.com/api/v2/proxy/search` &&
-          equals(opts.headers, { [Header.CONTENT_TYPE]: 'application/json', authorization: TOKEN }) &&
+          equals(opts.headers, { ...JSON_HEADERS, authorization: TOKEN }) &&
           equals(JSON.parse(opts.body as string), {
             query: 'shoe',
             fields: ['title', 'price'],
@@ -81,6 +91,40 @@ suite('Apion', () => {
           }),
         200
       );
+
+    function mockCrud(path: string) {
+      mock
+        .get(
+          (url, opts) =>
+            url === `https://${CUSTOMER}.groupbycloud.com/api/v2/${path}` &&
+            equals(opts.headers, { ...JSON_HEADERS, authorization: TOKEN }),
+          200
+        )
+        .post(
+          (url, opts) =>
+            url === `https://${CUSTOMER}.groupbycloud.com/api/v2/${path}` &&
+            equals(opts.headers, { ...JSON_HEADERS, authorization: TOKEN }) &&
+            equals(JSON.parse(opts.body as string), MOCK_OBJ),
+          200
+        )
+        .mock(
+          (url, opts) =>
+            url === `https://${CUSTOMER}.groupbycloud.com/api/v2/${path}/${ID}` &&
+            equals(opts.headers, { ...JSON_HEADERS, authorization: TOKEN }) &&
+            (!opts.method || [Method.GET, Method.DELETE].includes(opts.method as any)),
+          200
+        )
+        .put(
+          (url, opts) =>
+            url === `https://${CUSTOMER}.groupbycloud.com/api/v2/${path}/${ID}` &&
+            equals(opts.headers, { ...JSON_HEADERS, authorization: TOKEN }) &&
+            equals(JSON.parse(opts.body as string), MOCK_OBJ),
+          200
+        );
+    }
+
+    mockCrud('area');
+    mockCrud('user');
 
     const adminPath = apion.config().path('admin/v2');
     const merchandisingPath = apion.config().path('api/v2');
@@ -167,6 +211,39 @@ suite('Apion', () => {
       .use(merchandisingConfig)
       .path('autocomplete/values');
 
+    const addPrimary = apion.action('addPrimary').post();
+    const removePrimary = apion.action('removePrimary').delete();
+    const getKeys = apion.action('getKeys');
+
+    const key = apion
+      .group('key')
+      .use(merchandisingConfig)
+      .path('key')
+      .nest(addPrimary)
+      .nest(removePrimary)
+      .nest('get', getKeys);
+
+    const get = apion.action('get', (id: string) => (api) => api.path(id));
+    const find = apion.action('find');
+    const create = apion.action('create', (obj: any) => (api) => api.body(obj)).post();
+    const update = apion.action('update', (id: string, obj: any) => (api) => api.path(id).body(obj)).put();
+    const remove = apion.action('remove', (id: string) => (api) => api.path(id)).delete();
+
+    const crudConfig = (name: string, path = name) =>
+      apion
+        .group(name)
+        .use(json)
+        .use(merchandisingConfig)
+        .path(path)
+        .nest(get)
+        .nest(find)
+        .nest(create)
+        .nest(update)
+        .nest(remove);
+
+    const area = crudConfig('area');
+    const user = crudConfig('user');
+
     const auth = apion
       .group('auth', (token: string) => ({ token }))
       .nest(grove)
@@ -175,7 +252,10 @@ suite('Apion', () => {
       .nest('validate', validateToken)
       .nest(adminCollections)
       .nest(productAttributes)
-      .nest(productAttributeValues);
+      .nest(productAttributeValues)
+      .nest(key)
+      .nest(area)
+      .nest(user);
 
     const root = apion
       .group('groupby', (customer: string) => ({ customer }))
@@ -206,6 +286,9 @@ suite('Apion', () => {
       'collections',
       'productAttributes',
       'productAttributeValues',
+      'key',
+      'area',
+      'user',
     ]);
 
     const groveRes = await authClient.grove();
@@ -230,6 +313,43 @@ suite('Apion', () => {
 
     const productAttributeValuesRes = await authClient.productAttributeValues(SOURCE_AREA, FIELD);
     expect(productAttributeValuesRes.ok).to.be.true;
+
+    const keyClient = authClient.key;
+
+    expect(Object.keys(keyClient)).to.have.members(['addPrimary', 'removePrimary', 'get']);
+
+    const addKeyRes = await keyClient.addPrimary();
+    expect(addKeyRes.ok).to.be.true;
+
+    const removeKeyRes = await keyClient.removePrimary();
+    expect(removeKeyRes.ok).to.be.true;
+
+    const getKeysRes = await keyClient.get();
+    expect(getKeysRes.ok).to.be.true;
+
+    async function testCrud(key: string) {
+      const crudClient = authClient[key];
+      expect(Object.keys(crudClient)).to.have.members(['get', 'find', 'create', 'update', 'remove']);
+
+      const getRes = await crudClient.get(ID);
+      expect(getRes.ok).to.be.true;
+
+      const findRes = await crudClient.find(ID);
+      expect(findRes.ok).to.be.true;
+
+      const createRes = await crudClient.create(MOCK_OBJ);
+      expect(createRes.ok).to.be.true;
+
+      const updateRes = await crudClient.update(ID, MOCK_OBJ);
+      expect(updateRes.ok).to.be.true;
+
+      const removeRes = await crudClient.remove(ID);
+      expect(removeRes.ok).to.be.true;
+    }
+
+    await testCrud('area');
+    await testCrud('area');
+    // await testCrud('user');
 
     const searchRes1 = await authClient.search((builder: any) =>
       builder

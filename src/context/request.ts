@@ -81,4 +81,8 @@ export default class RequestContext extends Context<Request> {
   middleware(phase: Phase, middleware: Transformer<any>) {
     return this.set('middleware', (prev) => [...(prev || []), [phase, middleware] as [Phase, Transformer<any>]]);
   }
+
+  protected shallowClone<S extends this>(): S {
+    return new RequestContext() as any;
+  }
 }

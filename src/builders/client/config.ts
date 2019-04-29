@@ -1,6 +1,6 @@
 // tslint:disable:variable-name
 import { Method } from '../../constants';
-import Context from '../../context';
+import Context, { Resolvable } from '../../context';
 import RequestContext from '../../context/request';
 import { Named, Phase, Transformer } from '../../types';
 
@@ -10,7 +10,7 @@ export type ContextualBuilder<C extends object> = ((ctx: C) => ConfigBuilder<any
 
 export function wrapDynamicTransform<C>(
   builder: ((ctx: C) => ConfigBuilder<any, string>) | ConfigBuilder<any, string>,
-  extract: (builer: ConfigBuilder<any, string>) => Context<any>
+  extract: (builer: ConfigBuilder<any, string>) => Resolvable<any>
 ) {
   return builder instanceof ConfigBuilder
     ? extract(builder)
@@ -99,9 +99,9 @@ export default class ConfigBuilder<C extends object, K extends string> implement
   use(contextualBuilder: ContextualBuilder<C>) {
     if (typeof contextualBuilder !== 'function') {
       // context cannot be built up using this pattern
-      this._ctx.inherit(contextualBuilder._ctx);
+      this._ctx.inherit(contextualBuilder._ctx as Resolvable<C>);
     }
-    this._request.inherit(wrapDynamicTransform<C>(contextualBuilder, (builder) => builder._request));
+    this._request.inherit(wrapDynamicTransform<C>(contextualBuilder, (builder) => builder._request as any));
 
     return this;
   }

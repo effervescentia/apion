@@ -1,51 +1,53 @@
 // tslint:disable:variable-name
 import * as URL from 'url';
 
+import { Method } from '@/constants';
+import { Applicator, Phase, Request, Transformer } from '@/types';
+import { fromEntries } from '@/utils';
 import Context from '.';
-import { Method } from '../constants';
-import { Phase, Request, Transformer } from '../types';
-import { fromEntries } from '../utils';
 
-export type Updater<T> = Transformer<T | undefined, T> | T;
+export type Apply<T, C> = Applicator<T, C> | T;
 
 export function normalizeHeaders(headers: Record<string, string>): Record<string, string> {
   return fromEntries(Object.entries(headers).map(([key, value]) => [key.toLowerCase(), value]));
 }
 
 export default class RequestContext extends Context<Request> {
-  headers(headers: Updater<Record<string, string>>) {
+  headers(headers: Apply<Record<string, string>, any>) {
     return this.set(
       'headers',
-      (prev) =>
-        typeof headers === 'function' ? normalizeHeaders(headers(prev!)) : { ...prev, ...normalizeHeaders(headers) }
+      (prev, ctx) =>
+        typeof headers === 'function'
+          ? normalizeHeaders(headers(prev!, ctx))
+          : { ...prev, ...normalizeHeaders(headers) }
     );
   }
 
-  body(body: Updater<any>) {
+  body(body: Apply<any, any>) {
     return this.set('body', body);
   }
 
-  method(method: Updater<Method>) {
+  method(method: Apply<Method, any>) {
     return this.set('method', method);
   }
 
-  url(url: Updater<string>) {
-    return this.set('url', (prev) => {
-      const { href } = URL.parse(typeof url === 'function' ? url(prev) : url);
+  url(url: Apply<string, any>) {
+    return this.set('url', (prev, ctx) => {
+      const { href } = URL.parse(typeof url === 'function' ? url(prev, ctx) : url);
 
       return href!;
     });
   }
 
-  port(port: Updater<number>) {
-    return this.set('url', (prev) => {
+  port(port: Apply<number, any>) {
+    return this.set('url', (prev, ctx) => {
       const { port: prevPort, ...prevURL } = URL.parse(prev || '');
 
-      return URL.format({ ...prevURL, port: typeof port === 'function' ? port(Number(prevPort!)) : port });
+      return URL.format({ ...prevURL, port: typeof port === 'function' ? port(Number(prevPort!), ctx) : port });
     });
   }
 
-  query(query: Updater<string>): this;
+  query(query: Apply<string, any>): this;
   query(name: string, value: string): this;
   query(nameOrQuery: any, value?: string) {
     if (value) {
@@ -56,17 +58,20 @@ export default class RequestContext extends Context<Request> {
       });
     }
 
-    return this.set('url', (prev) => {
+    return this.set('url', (prev, ctx) => {
       const { search, ...prevURL } = URL.parse(prev || '');
 
-      return URL.format({ ...prevURL, search: typeof nameOrQuery === 'function' ? nameOrQuery(search!) : nameOrQuery });
+      return URL.format({
+        ...prevURL,
+        search: typeof nameOrQuery === 'function' ? nameOrQuery(search!, ctx) : nameOrQuery,
+      });
     });
   }
 
-  path(pathname: Updater<string>) {
-    return this.set('url', (prev) => {
+  path(pathname: Apply<string, any>) {
+    return this.set('url', (prev, ctx) => {
       const { pathname: prevPathname, ...prevURL } = URL.parse(prev || '');
-      const pathnameString = typeof pathname === 'function' ? pathname(prevPathname) : pathname;
+      const pathnameString = typeof pathname === 'function' ? pathname(prevPathname!, ctx) : pathname;
       const newPathname =
         pathnameString[0] === '/'
           ? pathnameString
@@ -82,7 +87,7 @@ export default class RequestContext extends Context<Request> {
     return this.set('middleware', (prev) => [...(prev || []), [phase, middleware] as [Phase, Transformer<any>]]);
   }
 
-  protected shallowClone<S extends this>(): S {
-    return new RequestContext() as any;
+  clone() {
+    return new RequestContext(this.transforms);
   }
 }

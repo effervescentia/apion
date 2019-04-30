@@ -92,10 +92,6 @@ export default class ConfigBuilder<C extends object, K extends string> implement
     return this;
   }
 
-  // local(builder: ConfigBuilder<any, any>) {
-  //   return this;
-  // }
-
   use(contextualBuilder: ContextualBuilder<C>) {
     if (typeof contextualBuilder !== 'function') {
       // context cannot be built up using this pattern
@@ -104,6 +100,10 @@ export default class ConfigBuilder<C extends object, K extends string> implement
     this._request.inherit(wrapDynamicTransform<C>(contextualBuilder, (builder) => builder._request as any));
 
     return this;
+  }
+
+  pipe<T extends ConfigBuilder<any, string>>(trfm: Transformer<this, T>): T {
+    return trfm(this);
   }
 
   private resolver<T>(handler: ContextualHandler<C, T>, merge?: (prev: T, next: T) => T) {

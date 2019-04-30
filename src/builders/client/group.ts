@@ -23,23 +23,6 @@ export default class GroupBuilder<
 > extends ConfigBuilder<C, K> implements NestingBuilder<C, K, X, A> {
   private _children: X = {} as X;
 
-  protected get wrappedConstructor() {
-    return (...args: A) => {
-      const context = (this.ctor as (...args: A) => any)(...args);
-
-      this.setTemporal(true);
-      if (typeof context === 'function') {
-        // const clone = new GroupBuilder();
-        // context(clone);
-        // this.use(clone);
-        context(this);
-      } else {
-        this._ctx.update(context);
-      }
-      this.setTemporal(false);
-    };
-  }
-
   constructor(name?: K, public ctor?: Constructor<K, A, any> | RequestBuilder<any>) {
     super(name);
   }
@@ -77,38 +60,34 @@ export default class GroupBuilder<
   }
 
   build(fetch: typeof _fetch = _fetch) {
-    const children = this.buildChildren(fetch);
-
     if (this.ctor) {
       return (...args: A) => {
-        this.wrappedConstructor(...args);
+        const children = this.buildChildren(fetch);
+
+        this.wrappedConstructor()(...args);
 
         return children;
       };
     }
 
-    return children;
+    return this.buildChildren(fetch);
   }
 
-  setTemporal(temporal: boolean) {
-    this._ctx.setTemporal(temporal);
-    this._request.setTemporal(temporal);
+  protected wrappedConstructor(self = this) {
+    return (...args: A) => {
+      const context = (this.ctor as (...args: A) => any)(...args);
+
+      if (typeof context === 'function') {
+        context(self);
+      } else {
+        self._ctx.update(context);
+      }
+    };
   }
 
-  protected buildChildren(fetch: typeof _fetch): Record<keyof X, any> {
-    return fromEntries<keyof X, any>(Object.entries(this._children).map(([key, value]) => [key, value.build(fetch)]));
-  }
-
-  protected shallowClone<T extends this>(): T {
-    return new GroupBuilder(this.name, this.ctor) as any;
-  }
-
-  protected clone() {
-    const clone = this.shallowClone();
-    clone._children = { ...this._children };
-    clone._ctx = this._ctx.clone();
-    clone._request = this._request.clone();
-
-    return clone;
+  protected buildChildren(fetch: typeof _fetch, mixin?: this): Record<keyof X, any> {
+    return fromEntries<keyof X, any>(
+      Object.entries(this._children).map(([key, value]) => [key, (mixin ? value.use(mixin) : value).build(fetch)])
+    );
   }
 }

@@ -12,10 +12,14 @@ export default class ActionBuilder<
   X extends Record<string, GroupBuilder<any, string, any>>,
   A extends any[] = never
 > extends GroupBuilder<C, K, X, A> {
+  private _transient: this | null = null;
+
   build(fetch: typeof _fetch = _fetch) {
     const children = this.buildChildren(fetch);
 
     if (this.ctor) {
+      this.addTransient();
+
       if (this.ctor instanceof RequestBuilder) {
         return Object.assign(
           (
@@ -26,9 +30,9 @@ export default class ActionBuilder<
               const builderInstance = new BuilderClazz();
               const body = handlerOrValue(builderInstance);
 
-              this.body(body instanceof RequestBuilderInstance ? body.build() : body);
+              this._transient!.body(body instanceof RequestBuilderInstance ? body.build() : body);
             } else {
-              this.body(handlerOrValue);
+              this._transient!.body(handlerOrValue);
             }
 
             return this.send(fetch);
@@ -38,7 +42,7 @@ export default class ActionBuilder<
       }
 
       return Object.assign((...args: A) => {
-        this.wrappedConstructor(...args);
+        this.wrappedConstructor(this._transient! as any)(...args);
 
         return this.send(fetch);
       }, children);
@@ -47,13 +51,17 @@ export default class ActionBuilder<
     return Object.assign(() => this.send(fetch), children);
   }
 
-  protected shallowClone<T extends this>(): T {
-    console.log('cloning action', this);
-    return new ActionBuilder(this.name, this.ctor) as any;
+  private addTransient() {
+    this._transient = new ActionBuilder(`${this.name}::transient`).use(this) as any;
   }
 
   private async send(fetch: typeof _fetch) {
-    const { url, headers, method, body, middleware = [] } = this._request.resolve(this._ctx.resolve());
+    const builder: ActionBuilder<C, string, X, A> = this._transient ? this._transient : this;
+    const { url, headers, method, body, middleware = [] } = builder._request.resolve(builder._ctx.resolve());
+
+    if (this._transient) {
+      this.addTransient();
+    }
 
     const formatters = middleware.filter(([phase]) => phase === Phase.FORMAT).map(([_, formatter]) => formatter);
     const parsers = middleware.filter(([phase]) => phase === Phase.PARSE).map(([_, parser]) => parser);

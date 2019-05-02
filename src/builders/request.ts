@@ -1,7 +1,7 @@
 // tslint:disable:variable-name
 import { compose, identity } from 'ramda';
 
-import { Transformer } from '../types';
+import { Transformer } from '@/types';
 
 export type Handler<K extends string, A extends any[]> = (...args: A) => Record<K, any>;
 

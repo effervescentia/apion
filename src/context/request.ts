@@ -1,10 +1,10 @@
 // tslint:disable:variable-name
 import * as URL from 'url';
 
+import { Method } from '@/constants';
+import { Phase, Request, Transformer } from '@/types';
+import { fromEntries } from '@/utils';
 import Context from '.';
-import { Method } from '../constants';
-import { Phase, Request, Transformer } from '../types';
-import { fromEntries } from '../utils';
 
 export type Updater<T> = Transformer<T | undefined, T> | T;
 

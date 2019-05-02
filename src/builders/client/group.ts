@@ -1,8 +1,8 @@
 // tslint:disable:variable-name
 import _fetch from 'cross-fetch';
 
-import { fromEntries } from '../../utils';
-import RequestBuilder from '../request';
+import RequestBuilder from '@/builders/request';
+import { fromEntries } from '@/utils';
 import ConfigBuilder, { ContextualBuilder } from './config';
 
 export type Constructor<K extends string, T extends any[], R extends object> =
@@ -80,7 +80,7 @@ export default class GroupBuilder<
       if (typeof context === 'function') {
         context(self);
       } else {
-        self._ctx.update(context);
+        self._context.update(context);
       }
     };
   }

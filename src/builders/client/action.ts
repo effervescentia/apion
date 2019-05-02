@@ -2,8 +2,8 @@
 import _fetch from 'cross-fetch';
 import { compose } from 'ramda';
 
-import { Phase } from '../../types';
-import RequestBuilder, { RequestBuilderInstance } from '../request';
+import RequestBuilder, { RequestBuilderInstance } from '@/builders/request';
+import { Phase } from '@/types';
 import GroupBuilder from './group';
 
 export default class ActionBuilder<
@@ -57,7 +57,7 @@ export default class ActionBuilder<
 
   private async send(fetch: typeof _fetch) {
     const builder: ActionBuilder<C, string, X, A> = this._transient ? this._transient : this;
-    const { url, headers, method, body, middleware = [] } = builder._request.resolve(builder._ctx.resolve());
+    const { url, headers, method, body, middleware = [] } = builder._request.resolve(builder._context.resolve());
 
     if (this._transient) {
       this.addTransient();

@@ -1,10 +1,11 @@
 // tslint:disable:variable-name
 import _fetch from 'cross-fetch';
-import { compose } from 'ramda';
 
 import RequestBuilder, { RequestBuilderInstance } from '@/builders/request';
 import { Phase } from '@/types';
-import GroupBuilder from './group';
+import { compose } from '@/utils';
+import ConfigBuilder from './config';
+import GroupBuilder, { ActionConstructor } from './group';
 
 export default class ActionBuilder<
   C extends object,
@@ -12,56 +13,57 @@ export default class ActionBuilder<
   X extends Record<string, GroupBuilder<any, string, any>>,
   A extends any[] = never
 > extends GroupBuilder<C, K, X, A> {
-  private _transient: this | null = null;
+  constructor(name?: K, _ctor?: ActionConstructor<K, A, any>, _parents: ConfigBuilder<any, string>[] = []) {
+    super(name, _ctor as any, _parents);
+  }
 
   build(fetch: typeof _fetch = _fetch) {
     const children = this.buildChildren(fetch);
 
-    if (this.ctor) {
-      this.addTransient();
-
-      if (this.ctor instanceof RequestBuilder) {
+    if (this._ctor) {
+      if (this._ctor instanceof RequestBuilder) {
         return Object.assign(
           (
             handlerOrValue: ((builder: RequestBuilderInstance<any>) => RequestBuilderInstance<any> | object) | object
           ) => {
+            const transient = this.clone('action_ctor::request_builder');
+
             if (typeof handlerOrValue === 'function') {
-              const BuilderClazz = (this.ctor as RequestBuilder<any>).build();
+              const BuilderClazz = (this._ctor as RequestBuilder<any>).build();
               const builderInstance = new BuilderClazz();
               const body = handlerOrValue(builderInstance);
 
-              this._transient!.body(body instanceof RequestBuilderInstance ? body.build() : body);
+              transient.body(body instanceof RequestBuilderInstance ? body.build() : body);
             } else {
-              this._transient!.body(handlerOrValue);
+              transient.body(handlerOrValue);
             }
 
-            return this.send(fetch);
+            return this.send(fetch, transient as any);
           },
           children
         );
       }
 
       return Object.assign((...args: A) => {
-        this.wrappedConstructor(this._transient! as any)(...args);
+        const transient = this.clone('action_ctor');
 
-        return this.send(fetch);
+        this.wrappedConstructor(transient as any)(...args);
+
+        return this.send(fetch, transient as any);
       }, children);
     }
 
     return Object.assign(() => this.send(fetch), children);
   }
 
-  private addTransient() {
-    this._transient = new ActionBuilder(`${this.name}::transient`).use(this) as any;
+  protected newInstance(name: string) {
+    return new ActionBuilder(`${this.name}::${name}`);
   }
 
-  private async send(fetch: typeof _fetch) {
-    const builder: ActionBuilder<C, string, X, A> = this._transient ? this._transient : this;
-    const { url, headers, method, body, middleware = [] } = builder._request.resolve(builder._context.resolve());
-
-    if (this._transient) {
-      this.addTransient();
-    }
+  private async send(fetch: typeof _fetch, builder: ActionBuilder<C, string, X, A> = this) {
+    debugger;
+    const context = builder.resolveContext();
+    const { url, headers, method, body, middleware = [] } = builder.resolveRequest(context);
 
     const formatters = middleware.filter(([phase]) => phase === Phase.FORMAT).map(([_, formatter]) => formatter);
     const parsers = middleware.filter(([phase]) => phase === Phase.PARSE).map(([_, parser]) => parser);
@@ -69,7 +71,7 @@ export default class ActionBuilder<
     const res = await fetch(url, {
       headers,
       method,
-      body: formatters.length ? (compose as any)(...formatters)(body) : body,
+      body: formatters.length ? compose(...formatters)(body) : body,
     });
 
     let headersObj = {};
@@ -80,7 +82,7 @@ export default class ActionBuilder<
     return {
       headers: headersObj,
       status: res.status,
-      body: bodyText && parsers.length ? (compose as any)(...parsers)(bodyText) : bodyText,
+      body: bodyText && parsers.length ? compose(...parsers)(bodyText) : bodyText,
       ok: res.ok,
     };
   }

@@ -1,55 +1,52 @@
 // tslint:disable:variable-name
-import { compose } from 'ramda';
+import { Applicator } from '@/types';
+import { compose } from '@/utils';
 
-export type ContextualTransformer<C extends object, T, R = T> = (prev: T, ctx: C) => R;
+const TRFM_TYPE = Symbol('transform type');
+const TRFM_VALUE = Symbol('transform value');
+
+export type ContextualTransform<C, T, R = T> = Applicator<T, C, R>;
 
 export interface Resolvable<T extends object> {
   resolve(ctx?: any, initialValue?: any): T;
 }
 
 export default class Context<T extends object> implements Resolvable<T> {
-  constructor(private _trfms: ContextualTransformer<any, Partial<T>>[] = [], public _parents: Resolvable<any>[] = []) {}
+  constructor(public transforms: ContextualTransform<any, Partial<T>>[] = []) {}
 
-  set<K extends keyof T>(name: K, value: ContextualTransformer<any, T[K]> | T[K]) {
-    const trfm = (prev: Partial<T>) => ({
+  set<K extends keyof T>(name: K, value: ContextualTransform<any, T[K]> | T[K]) {
+    const trfm = (prev: Partial<T>, ctx?: any) => ({
       ...prev,
-      [name]: typeof value === 'function' ? (value as ContextualTransformer<any, T[K]>)(prev[name]!, null) : value,
+      [name]: typeof value === 'function' ? (value as ContextualTransform<any, T[K]>)(prev[name]!, ctx) : value,
     });
 
-    this._trfms.push(trfm);
-
-    return this;
+    return this.transform(Object.assign(trfm, { [TRFM_TYPE]: `set(${name})`, [TRFM_VALUE]: value }));
   }
 
-  update(value: ((prev: Partial<T>) => Partial<T>) | Partial<T>) {
-    const trfm = (prev: Partial<T>) => (typeof value === 'function' ? value(prev) : { ...prev, ...value });
+  update(value: Applicator<Partial<T>, any> | Partial<T>) {
+    const trfm = (prev: Partial<T>, ctx: any) =>
+      typeof value === 'function' ? value(prev, ctx) : { ...prev, ...value };
 
-    this._trfms.push(trfm);
-
-    return this;
+    return this.transform(Object.assign(trfm, { [TRFM_TYPE]: 'update', [TRFM_VALUE]: value }));
   }
 
-  inherit<P extends object>(
-    ctx: ContextualTransformer<any, Partial<T>, Resolvable<P>> | Resolvable<P>
-  ): Context<P & T> {
-    const parent = typeof ctx === 'function' ? Context.from(ctx as any) : ctx;
-
-    this._parents.push(parent);
-
-    return this as any;
-  }
-
-  resolve(ctx: any = null, initialValue = {}): T {
-    const inheritedValue = this._parents.length
-      ? (compose as any)(...this._parents.map((parent) => (prev: any) => parent.resolve(ctx, prev)))(initialValue)
+  resolve(context: any = null, initialValue = {}): T {
+    return this.transforms.length
+      ? compose(...this.transforms.map((trfm) => (value: any, ctx: any) => trfm(value, ctx)))(initialValue, context)
       : initialValue;
-
-    return this._trfms.length
-      ? (compose as any)(...this._trfms.map((trfm) => (prev: any) => trfm(prev, ctx)))(inheritedValue)
-      : inheritedValue;
   }
 
-  static from<T extends object>(trfm: ContextualTransformer<any, Partial<T>>): Resolvable<T> {
+  clone() {
+    return new Context(this.transforms);
+  }
+
+  private transform(trfm: ContextualTransform<any, Partial<T>>) {
+    this.transforms = [...this.transforms, trfm];
+
+    return this;
+  }
+
+  static from<T extends object>(trfm: ContextualTransform<any, Partial<T>>): Resolvable<T> {
     return new Context<T>([trfm]) as any;
   }
 }

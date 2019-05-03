@@ -2,71 +2,64 @@
 import _fetch from 'cross-fetch';
 
 import RequestBuilder from '@/builders/request';
+import { Lambda } from '@/types';
 import { fromEntries } from '@/utils';
-import ConfigBuilder, { ContextualBuilder } from './config';
+import ConfigBuilder from './config';
 
 export type Constructor<K extends string, T extends any[], R extends object> =
-  | ((...args: T) => R)
-  | ((...args: T) => <S extends Record<string, any>>(builder: GroupBuilder<R, K, {}>) => GroupBuilder<any, K, S>);
+  | Lambda<T, R>
+  | Lambda<T, <S extends Record<string, any>>(builder: GroupBuilder<R, K, {}>) => GroupBuilder<any, K, S>>;
 
-export interface NestingBuilder<C extends object, K extends string, T extends Record<string, any>, A extends any[]> {
-  build(fetch?: typeof _fetch): ((...args: A) => Record<keyof T, any>) | Record<keyof T, any>;
-
-  use(builder: ContextualBuilder<C>): this;
-}
+export type ActionConstructor<K extends string, T extends any[], R extends object> =
+  | Constructor<K, T, R>
+  | RequestBuilder<R>;
 
 export default class GroupBuilder<
   C extends object,
   K extends string,
-  X extends Record<string, NestingBuilder<any, string, any, any>>,
+  X extends Record<string, GroupBuilder<any, any, any>>,
   A extends any[] = never
-> extends ConfigBuilder<C, K> implements NestingBuilder<C, K, X, A> {
-  private _children: X = {} as X;
+> extends ConfigBuilder<C, K> {
+  protected _ctor?: ActionConstructor<K, A, any>;
+  protected _children: X = {} as X;
 
-  constructor(name?: K, public ctor?: Constructor<K, A, any> | RequestBuilder<any>) {
-    super(name);
+  constructor(name?: K, ctor?: Constructor<K, A, any>, _parents: ConfigBuilder<any, string>[] = []) {
+    super(name, _parents);
+
+    this._ctor = ctor;
   }
 
-  use(builder: ContextualBuilder<C>) {
-    super.use(builder);
-
-    Object.values(this._children).forEach((child) => child.use(builder));
-
-    return this;
-  }
-
-  nest<D extends object, L extends string, Y extends Record<string, NestingBuilder<any, string, any, any>>>(
-    name: L,
-    builder: NestingBuilder<D, string, Y, any>
-  ): GroupBuilder<C, K, X & Record<L, NestingBuilder<D, string, Y, any>>>;
-  nest<D extends object, L extends string, Y extends Record<string, NestingBuilder<any, string, any, any>>>(
-    builder: NestingBuilder<D, L, Y, any>
-  ): GroupBuilder<C, K, X & Record<L, NestingBuilder<D, L, Y, any>>>;
-  nest<D extends object, L extends string, Y extends Record<string, NestingBuilder<any, string, any, any>>>(
-    builderOrName: L | GroupBuilder<D, L, Y>,
-    builder?: NestingBuilder<D, L, Y, any>
-  ) {
+  nest<N extends string, T extends GroupBuilder<any, string, any>>(
+    name: N,
+    builder: T
+  ): GroupBuilder<C, K, X & Record<N, T>>;
+  nest<N extends string, T extends GroupBuilder<any, N, any>>(builder: T): GroupBuilder<C, K, X & Record<N, T>>;
+  nest<N extends string, T extends GroupBuilder<any, string, any>>(builderOrName: N | T, builder?: T) {
     if (typeof builderOrName === 'string' && builder) {
-      builder.use(this);
-      this._children = { ...this._children, [builderOrName]: builder };
+      this.addChild(builderOrName, builder);
     } else {
-      const namedBuilder = builderOrName as GroupBuilder<D, L, Y>;
+      const namedBuilder = builderOrName as GroupBuilder<any, string, any>;
 
-      namedBuilder.use(this);
-      this._children = { ...this._children, [namedBuilder.name!]: namedBuilder };
+      this.addChild(namedBuilder.name!, namedBuilder);
     }
 
     return this;
   }
 
+  ctor(ctor: Constructor<K, A, C>) {
+    this._ctor = ctor;
+
+    return this;
+  }
+
   build(fetch: typeof _fetch = _fetch) {
-    if (this.ctor) {
+    if (this._ctor) {
       return (...args: A) => {
-        const children = this.buildChildren(fetch);
+        const transient = this.clone('group_ctor');
 
-        this.wrappedConstructor()(...args);
+        this.wrappedConstructor(transient as any)(...args);
 
-        return children;
+        return this.buildChildren(fetch, transient as any);
       };
     }
 
@@ -75,7 +68,7 @@ export default class GroupBuilder<
 
   protected wrappedConstructor(self = this) {
     return (...args: A) => {
-      const context = (this.ctor as (...args: A) => any)(...args);
+      const context = (this._ctor as Lambda<A, any>)(...args);
 
       if (typeof context === 'function') {
         context(self);
@@ -87,7 +80,39 @@ export default class GroupBuilder<
 
   protected buildChildren(fetch: typeof _fetch, mixin?: this): Record<keyof X, any> {
     return fromEntries<keyof X, any>(
-      Object.entries(this._children).map(([key, value]) => [key, (mixin ? value.use(mixin) : value).build(fetch)])
+      Object.entries(this._children).map(([key, value]) => [key, (mixin ? value.inherit(mixin) : value).build(fetch)])
     );
+  }
+
+  protected newInstance(name: string) {
+    return new GroupBuilder(`${this.name}::${name}`);
+  }
+
+  protected clone(name: string): this {
+    return this.evolve(this.newInstance(name) as this);
+  }
+
+  protected evolve(builder: this) {
+    super.evolve(builder);
+    builder._ctor = this._ctor;
+    builder._children = Object.keys(this._children).reduce(
+      (acc, key) => ({
+        ...acc,
+        [key]: this._children[key].replaceParent(this, builder),
+      }),
+      {} as any
+    );
+
+    return builder;
+  }
+
+  private addChild<T extends ConfigBuilder<any, string>>(name: string, builder: T) {
+    if (name in this._children) {
+      throw new Error(`all children must have unique names, duplicate "${name}" not added`);
+    }
+
+    const flattened = builder.flatten().inherit(this);
+
+    this._children = { ...this._children, [name]: flattened };
   }
 }

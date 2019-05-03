@@ -1,9 +1,8 @@
 // tslint:disable:variable-name
-import { compose, identity } from 'ramda';
+import { Lambda, Transformer } from '@/types';
+import { compose, identity } from '@/utils';
 
-import { Transformer } from '@/types';
-
-export type Handler<K extends string, A extends any[]> = (...args: A) => Record<K, any>;
+export type Handler<K extends string, A extends any[]> = Lambda<A, Record<K, any>>;
 
 export abstract class RequestBuilderInstance<T> {
   protected _trfms: Transformer<T>[] = [];

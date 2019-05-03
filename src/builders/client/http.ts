@@ -2,33 +2,31 @@
 import { Method } from '@/constants';
 import Context from '@/context';
 import RequestContext from '@/context/request';
-import { Phase, Transformer } from '@/types';
-
-export type ContextualHandler<C, T, R = T> = ((prev: T, ctx: C) => R) | R;
+import { ContextualUpdate, Merger, Phase, Transformer } from '@/types';
 
 export default class HTTPBuilder<C extends object> {
   protected _context: Context<C> = new Context();
   protected _request: RequestContext = new RequestContext();
 
-  url(url: ContextualHandler<C, string>) {
+  url(url: ContextualUpdate<C, string>) {
     this._request.url(this.resolver(url));
 
     return this;
   }
 
-  port(port: ContextualHandler<C, number>) {
+  port(port: ContextualUpdate<C, number>) {
     this._request.port(this.resolver(port));
 
     return this;
   }
 
-  query(query: ContextualHandler<C, string>) {
+  query(query: ContextualUpdate<C, string>) {
     this._request.query(this.resolver(query));
 
     return this;
   }
 
-  path(path: ContextualHandler<C, string>) {
+  path(path: ContextualUpdate<C, string>) {
     this._request.path(this.resolver(path));
 
     return this;
@@ -55,13 +53,13 @@ export default class HTTPBuilder<C extends object> {
     return this.method(Method.DELETE);
   }
 
-  headers(headers: ContextualHandler<C, Record<string, string>>) {
+  headers(headers: ContextualUpdate<C, Record<string, string>>) {
     this._request.headers(this.resolver(headers, (prev, next) => ({ ...prev, ...next })));
 
     return this;
   }
 
-  body<T>(body: ContextualHandler<C, unknown, T>) {
+  body<T>(body: ContextualUpdate<C, unknown, T>) {
     this._request.body(this.resolver(body));
 
     return this;
@@ -79,10 +77,10 @@ export default class HTTPBuilder<C extends object> {
     return this;
   }
 
-  private resolver<T>(handler: ContextualHandler<C, T>, merge?: (prev: T, next: T) => T) {
-    return (prev?: T) =>
+  private resolver<T>(handler: ContextualUpdate<C, T>, merge?: Merger<T>) {
+    return (prev?: T, ctx?: any) =>
       typeof handler === 'function'
-        ? (handler as (prev: T, ctx: C) => any)(prev!, this._context.resolve())
+        ? (handler as (prev: T, ctx: C) => any)(prev!, ctx)
         : merge
           ? merge(prev!, handler)
           : handler;

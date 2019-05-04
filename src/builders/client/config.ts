@@ -52,6 +52,10 @@ export default class ConfigBuilder<C extends object, K extends string> extends H
     return trfm(this);
   }
 
+  extend(name = 'anonymous') {
+    return this.clone(name);
+  }
+
   flatten(): ConfigBuilder<any, string> {
     const flattened = this._parents.reduce(
       (acc, parent) => acc.mergeContexts(parent.flatten()),

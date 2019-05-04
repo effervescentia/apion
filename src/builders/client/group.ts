@@ -46,7 +46,7 @@ export default class GroupBuilder<
     return this;
   }
 
-  ctor(ctor: Constructor<K, A, C>) {
+  ctor(ctor: Constructor<string, A, C>) {
     this._ctor = ctor;
 
     return this;

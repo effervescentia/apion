@@ -1,5 +1,4 @@
 import * as apion from '@/.';
-import ConfigBuilder from '@/builders/client/config';
 import GroupBuilder from '@/builders/client/group';
 import { json } from '@/helpers';
 
@@ -8,29 +7,15 @@ export default function createClient(mockFetch: any) {
   const merchandisingPath = apion.config('merchandising_path').path('api/v2');
   const streamPath = apion.config('stream_path').path('api/v2');
   const wisdomPath = apion.config('wisdom_path').path('wisdom/v2');
-  const analyticsPath = apion.config('analytics_path').path('analytics');
-  const wisdomReportingPath = apion
-    .config('wisdom_reporting_path')
-    .use(wisdomPath)
-    .path('reporting');
-  const wisdomRecommendationsPath = apion
-    .config('wisdom_recommendations_path')
-    .use(wisdomPath)
-    .path('recommendations');
-  const wisdomUsageReportingPath = apion
-    .config('wisdom_usage_reporting_path')
-    .use(wisdomReportingPath)
-    .path('usage');
-  const wisdomSearchReportingPath = apion
-    .config('wisdom_search_reporting_path')
-    .use(wisdomReportingPath)
-    .path('searches');
-  const merchandisingAdminPath = apion
-    .config('merchandising_admin_path')
-    .use(merchandisingPath)
-    .path('admin');
-  const tokenAuth: (ctx: any) => ConfigBuilder<any, string> = ({ token }: { token: string }) =>
-    apion.config('token_auth').headers({ Authorization: token });
+  // const analyticsPath = apion.config('analytics_path').path('analytics');
+  const wisdomReportingPath = wisdomPath.extend('reporting').path('reporting');
+  const wisdomRecommendationsPath = wisdomPath.extend('recommendations').path('recommendations');
+  const wisdomUsageReportingPath = wisdomReportingPath.extend('usage').path('usage');
+  const wisdomSearchReportingPath = wisdomReportingPath.extend('usage').path('searches');
+  const merchandisingAdminPath = merchandisingPath.extend('admin').path('admin');
+  const tokenAuth = apion
+    .config<{ token: string }>('token_auth')
+    .headers((prev, { token }) => ({ ...prev, Authorization: token }));
   const clientKeyHeaderAuth = apion
     .config<{ clientKey: string }>('client_key_header_auth')
     .headers((prev, { clientKey }) => ({ ...prev, Authorization: clientKey }));

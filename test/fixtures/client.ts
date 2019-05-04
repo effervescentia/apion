@@ -1,18 +1,25 @@
-import * as apion from '@/.';
+import apion from '@/.';
 import GroupBuilder from '@/builders/client/group';
 import { json } from '@/helpers';
 
 export default function createClient(mockFetch: any) {
-  const adminPath = apion.config('admin_path').path('admin/v2');
-  const merchandisingPath = apion.config('merchandising_path').path('api/v2');
-  const streamPath = apion.config('stream_path').path('api/v2');
-  const wisdomPath = apion.config('wisdom_path').path('wisdom/v2');
-  // const analyticsPath = apion.config('analytics_path').path('analytics');
-  const wisdomReportingPath = wisdomPath.extend('reporting').path('reporting');
-  const wisdomRecommendationsPath = wisdomPath.extend('recommendations').path('recommendations');
-  const wisdomUsageReportingPath = wisdomReportingPath.extend('usage').path('usage');
-  const wisdomSearchReportingPath = wisdomReportingPath.extend('usage').path('searches');
-  const merchandisingAdminPath = merchandisingPath.extend('admin').path('admin');
+  const adminPath = apion.config('admin_path').path('admin');
+  const dbPath = apion.config('db_path').path('database');
+  const ingestPath = apion.config('ingest_path').path('ingest');
+  const analyticsPath = apion.config('analytics_path').path('analytics');
+  const analyticsReportingPath = analyticsPath
+    .extend('reporting')
+    .path('reporting');
+  const analyticsRecommendationsPath = analyticsPath
+    .extend('recommendations')
+    .path('recommendations');
+  const analyticsUsageReportingPath = analyticsReportingPath
+    .extend('usage')
+    .path('usage');
+  const analyticsSearchReportingPath = analyticsReportingPath
+    .extend('usage')
+    .path('searches');
+  const merchandisingAdminPath = dbPath.extend('admin').path('admin');
   const tokenAuth = apion
     .config<{ token: string }>('token_auth')
     .headers((prev, { token }) => ({ ...prev, Authorization: token }));
@@ -29,7 +36,7 @@ export default function createClient(mockFetch: any) {
     .use(tokenAuth);
   const merchandisingConfig = apion
     .config('merchandising_config')
-    .use(merchandisingPath)
+    .use(dbPath)
     .use(tokenAuth);
   const merchandisingAdminConfig = apion
     .config('merchandising_admin_config')
@@ -37,32 +44,36 @@ export default function createClient(mockFetch: any) {
     .use(tokenAuth);
   const streamConfig = apion
     .config('stream_config')
-    .use(streamPath)
+    .use(ingestPath)
     .use(clientKeyBodyAuth);
   const windowedConfig = (api: GroupBuilder<any, string, any>) =>
-    api.ctor((body: any) => (api: any) => api.body(body)).post();
+    api.ctor((body: any) => (_api: any) => _api.body(body)).post();
 
   const login = apion
-    .action('login', (email: string, password: string) => (api) => api.body({ email, password }))
+    .action('login', (email: string, password: string) => api =>
+      api.body({ email, password })
+    )
     .use(json)
-    .use(merchandisingPath)
+    .use(dbPath)
     .path('login')
     .post();
 
   const validatePassword = apion
-    .action('validatePassword', (password: string) => (api) => api.body(password))
-    .use(merchandisingPath)
+    .action('validatePassword', (password: string) => api => api.body(password))
+    .use(dbPath)
     .path('password/validate')
     .post();
 
-  const grove = apion
-    .action('grove')
+  const group = apion
+    .action('group')
     .use(json)
     .use(adminConfig)
-    .path('grove');
+    .path('group');
 
   const promote = apion
-    .action('promote', (source: string, target: string) => (api) => api.body({ source, target }))
+    .action('promote', (source: string, target: string) => api =>
+      api.body({ source, target })
+    )
     .use(json)
     .use(merchandisingAdminConfig)
     .path('area/promote')
@@ -100,7 +111,9 @@ export default function createClient(mockFetch: any) {
     .path('autocomplete/fields');
 
   const productAttributeValues = apion
-    .action('productAttributeValues', (area: string, field: string) => (api) => api.body({ area, field }))
+    .action('productAttributeValues', (area: string, field: string) => api =>
+      api.body({ area, field })
+    )
     .use(json)
     .use(merchandisingConfig)
     .path('autocomplete/values');
@@ -117,11 +130,17 @@ export default function createClient(mockFetch: any) {
     .nest(removePrimary)
     .nest('get', getKeys);
 
-  const get = apion.action('get', (id: string) => (api) => api.path(id));
+  const get = apion.action('get', (id: string) => api => api.path(id));
   const find = apion.action('find');
-  const create = apion.action('create', (obj: any) => (api) => api.body(obj)).post();
-  const update = apion.action('update', (id: string, obj: any) => (api) => api.path(id).body(obj)).put();
-  const remove = apion.action('remove', (id: string) => (api) => api.path(id)).delete();
+  const create = apion
+    .action('create', (obj: any) => api => api.body(obj))
+    .post();
+  const update = apion
+    .action('update', (id: string, obj: any) => api => api.path(id).body(obj))
+    .put();
+  const remove = apion
+    .action('remove', (id: string) => api => api.path(id))
+    .delete();
 
   const CRUD = <T extends GroupBuilder<any, string, any>>(api: T) =>
     api
@@ -139,20 +158,24 @@ export default function createClient(mockFetch: any) {
       .path(path)
       .pipe(CRUD);
 
-  const bulkUpdate = apion.action('bulkUpdate', (models: any[]) => (api) => api.body({ models })).put();
+  const bulkUpdate = apion
+    .action('bulkUpdate', (models: any[]) => api => api.body({ models }))
+    .put();
 
   const namespacedModule = (name: string, path = name) =>
     apion
-      .group(name, (area: string) => (api) =>
-        api.path((_, { area: areaOverride }: any) => `${areaOverride || area}/${path}`)
+      .group(name, (area: string) => api =>
+        api.path(
+          (_, { area: areaOverride }: any) => `${areaOverride || area}/${path}`
+        )
       )
       .use(json)
       .use(merchandisingConfig)
       .pipe(CRUD)
       .nest(bulkUpdate);
 
-  const area = globalModel('area');
-  const user = globalModel('user');
+  const areaModel = globalModel('area');
+  const userModel = globalModel('user');
 
   const biasingProfileModel = namespacedModule('biasingProfile');
   const filterModel = namespacedModule('filter');
@@ -184,9 +207,11 @@ export default function createClient(mockFetch: any) {
       .nest(stopWordModel)
       .nest(templateModel);
 
-  const models = apion.group('models').pipe(withModels);
+  const allModels = apion.group('models').pipe(withModels);
 
-  const modelsByArea = apion.group('modelsByArea', (area: string) => ({ area })).pipe(withModels);
+  const modelsByArea = apion
+    .group('modelsByArea', (area: string) => ({ area }))
+    .pipe(withModels);
 
   const streamCollections = apion.action('collections').path('collections');
 
@@ -198,37 +223,37 @@ export default function createClient(mockFetch: any) {
 
   const recordCount = apion
     .action('recordCount')
-    .use(wisdomUsageReportingPath)
+    .use(analyticsUsageReportingPath)
     .pipe(windowedConfig)
     .path('records');
 
   const qps = apion
     .action('qps')
-    .use(wisdomUsageReportingPath)
+    .use(analyticsUsageReportingPath)
     .pipe(windowedConfig)
     .path('queries/timeseries');
 
   const topSearches = apion
     .action('topSearches')
-    .use(wisdomRecommendationsPath)
+    .use(analyticsRecommendationsPath)
     .pipe(windowedConfig)
     .path('searches/_getPopular');
 
   const topTrending = apion
     .action('topTrending')
-    .use(wisdomRecommendationsPath)
+    .use(analyticsRecommendationsPath)
     .pipe(windowedConfig)
     .path('searches/_getTrending');
 
   const topNullQueries = apion
     .action('topNullQueries')
-    .use(wisdomSearchReportingPath)
+    .use(analyticsSearchReportingPath)
     .pipe(windowedConfig)
     .path('_getNull');
 
   const topRefinements = apion
     .action('topRefinements')
-    .use(wisdomRecommendationsPath)
+    .use(analyticsRecommendationsPath)
     .pipe(windowedConfig)
     .path('refinements/_getPopular');
 
@@ -245,7 +270,7 @@ export default function createClient(mockFetch: any) {
 
   const auth = apion
     .group('auth', (token: string) => ({ token }))
-    .nest(grove)
+    .nest(group)
     .nest(promote)
     .nest('search', searchPreview)
     .nest('validate', validateToken)
@@ -253,16 +278,16 @@ export default function createClient(mockFetch: any) {
     .nest(productAttributes)
     .nest(productAttributeValues)
     .nest(key)
-    .nest(area)
-    .nest(user)
-    .nest(models)
+    .nest(areaModel)
+    .nest(userModel)
+    .nest(allModels)
     .nest(modelsByArea)
     .nest(admin)
     .nest(analytics);
 
   return apion
     .group('groupby', (customer: string) => ({ customer }))
-    .url((_, { customer }) => `https://${customer}.groupbycloud.com`)
+    .url((_, { customer }) => `https://${customer}.example.com`)
     .nest(login)
     .nest(validatePassword)
     .nest(auth)

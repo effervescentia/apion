@@ -1,0 +1,10 @@
+{
+  "extends": "../tslint.json",
+  "rules": {
+    "variable-name": false,
+    "no-expression-statement": false,
+    "typedef": false,
+    "no-unused-expression": false,
+    "readonly-keyword": false
+  }
+}

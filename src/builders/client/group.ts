@@ -1,18 +1,37 @@
-// tslint:disable:variable-name
+// tslint:disable:variable-name no-expression-statement
 import _fetch from 'cross-fetch';
 
-import RequestBuilder from '@/builders/request';
+import RequestBuilder, {
+  Instance as RequestBuilderInstance,
+} from '@/builders/request';
 import { Lambda } from '@/types';
 import { fromEntries } from '@/utils';
 import ConfigBuilder from './config';
 
 export type Constructor<K extends string, T extends any[], R extends object> =
   | Lambda<T, R>
-  | Lambda<T, <S extends Record<string, any>>(builder: GroupBuilder<R, K, {}>) => GroupBuilder<any, K, S>>;
+  | Lambda<
+      T,
+      <S extends Record<string, any>>(
+        builder: GroupBuilder<R, K, {}>
+      ) => GroupBuilder<any, K, S>
+    >;
 
-export type ActionConstructor<K extends string, T extends any[], R extends object> =
-  | Constructor<K, T, R>
-  | RequestBuilder<R>;
+export type ActionConstructor<
+  K extends string,
+  T extends any[],
+  R extends object
+> = Constructor<K, T, R> | RequestBuilder<R>;
+
+export type BuiltClient<
+  A extends any[],
+  X extends Record<string, GroupBuilder<any, string, any>>
+> =
+  | Lambda<A, Record<keyof X, any>>
+  | Record<keyof X, any>
+  | ((Lambda<A, Promise<Response>> | Lambda<[], Promise<Response>>) &
+      Record<keyof X, any>)
+  | ((builder: RequestBuilderInstance<any>) => void);
 
 export default class GroupBuilder<
   C extends object,
@@ -20,21 +39,32 @@ export default class GroupBuilder<
   X extends Record<string, GroupBuilder<any, any, any>>,
   A extends any[] = never
 > extends ConfigBuilder<C, K> {
+  // tslint:disable-next-line:readonly-keyword
   protected _ctor?: ActionConstructor<K, A, any>;
+  // tslint:disable-next-line:readonly-keyword no-object-literal-type-assertion
   protected _children: X = {} as X;
 
-  constructor(name?: K, ctor?: Constructor<K, A, any>, _parents: ConfigBuilder<any, string>[] = []) {
+  constructor(
+    name?: K,
+    ctor?: Constructor<K, A, any>,
+    _parents: Array<ConfigBuilder<any, string>> = []
+  ) {
     super(name, _parents);
 
     this._ctor = ctor;
   }
 
-  nest<N extends string, T extends GroupBuilder<any, string, any>>(
+  public nest<N extends string, T extends GroupBuilder<any, string, any>>(
     name: N,
     builder: T
   ): GroupBuilder<C, K, X & Record<N, T>>;
-  nest<N extends string, T extends GroupBuilder<any, N, any>>(builder: T): GroupBuilder<C, K, X & Record<N, T>>;
-  nest<N extends string, T extends GroupBuilder<any, string, any>>(builderOrName: N | T, builder?: T) {
+  public nest<N extends string, T extends GroupBuilder<any, N, any>>(
+    builder: T
+  ): GroupBuilder<C, K, X & Record<N, T>>;
+  public nest<N extends string, T extends GroupBuilder<any, string, any>>(
+    builderOrName: N | T,
+    builder?: T
+  ): GroupBuilder<C, K, X & Record<N, T>> {
     if (typeof builderOrName === 'string' && builder) {
       this.addChild(builderOrName, builder);
     } else {
@@ -43,16 +73,16 @@ export default class GroupBuilder<
       this.addChild(namedBuilder.name!, namedBuilder);
     }
 
-    return this;
+    return this as any;
   }
 
-  ctor(ctor: Constructor<string, A, C>) {
+  public ctor(ctor: Constructor<string, A, C>): this {
     this._ctor = ctor;
 
     return this;
   }
 
-  build(fetch: typeof _fetch = _fetch) {
+  public build(fetch: typeof _fetch = _fetch): BuiltClient<A, X> {
     if (this._ctor) {
       return (...args: A) => {
         const transient = this.clone('group_ctor');
@@ -66,8 +96,8 @@ export default class GroupBuilder<
     return this.buildChildren(fetch);
   }
 
-  protected wrappedConstructor(self = this) {
-    return (...args: A) => {
+  protected wrappedConstructor(self = this): (...args: A) => void {
+    return (...args) => {
       const context = (this._ctor as Lambda<A, any>)(...args);
 
       if (typeof context === 'function') {
@@ -78,13 +108,22 @@ export default class GroupBuilder<
     };
   }
 
-  protected buildChildren(fetch: typeof _fetch, mixin?: this): Record<keyof X, any> {
+  protected buildChildren(
+    fetch: typeof _fetch,
+    mixin?: this
+  ): Record<keyof X, any> {
     return fromEntries<keyof X, any>(
-      Object.entries(this._children).map(([key, value]) => [key, (mixin ? value.inherit(mixin) : value).build(fetch)])
+      Object.entries(this._children).map(
+        ([key, value]) =>
+          [key, (mixin ? value.inherit(mixin) : value).build(fetch)] as [
+            keyof X,
+            any
+          ]
+      )
     );
   }
 
-  protected newInstance(name: string) {
+  protected newInstance(name: string): GroupBuilder<any, string, any> {
     return new GroupBuilder(`${this.name}::${name}`);
   }
 
@@ -92,7 +131,7 @@ export default class GroupBuilder<
     return this.evolve(this.newInstance(name) as this);
   }
 
-  protected evolve(builder: this) {
+  protected evolve(builder: this): this {
     super.evolve(builder);
     builder._ctor = this._ctor;
     builder._children = Object.keys(this._children).reduce(
@@ -106,9 +145,14 @@ export default class GroupBuilder<
     return builder;
   }
 
-  private addChild<T extends ConfigBuilder<any, string>>(name: string, builder: T) {
+  private addChild<T extends ConfigBuilder<any, string>>(
+    name: string,
+    builder: T
+  ): void {
     if (name in this._children) {
-      throw new Error(`all children must have unique names, duplicate "${name}" not added`);
+      throw new Error(
+        `all children must have unique names, duplicate "${name}" not added`
+      );
     }
 
     const flattened = builder.flatten().inherit(this);

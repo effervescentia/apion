@@ -1,12 +1,10 @@
-node_modules/
-dist/
-coverage/
-typings/
-.scratch/
-.nyc_output/
-src/**/*.js
-src/**/*.d.ts
-test/**/*.js
-test/**/*.d.ts
+node_modules
+build
+src/**.js
+.idea/*
 
+coverage
+.nyc_output
 *.log
+
+package-lock.json

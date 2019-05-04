@@ -8,7 +8,7 @@ export type Applicator<T, C, R = T> = (value: T, ctx: C) => R;
 export type ContextualUpdate<C, T, R = T> = Applicator<T, C, R> | R;
 
 export interface Named<T extends string> {
-  name?: T;
+  readonly name?: T;
 }
 
 export enum Phase {
@@ -17,9 +17,16 @@ export enum Phase {
 }
 
 export interface Request {
-  url: string;
-  headers: Record<string, string>;
-  method: Method;
-  body: any;
-  middleware: [Phase, Transformer<any>][];
+  readonly url: string;
+  readonly headers: Record<string, string>;
+  readonly method: Method;
+  readonly body: any;
+  readonly middleware: Array<[Phase, Transformer<any>]>;
+}
+
+export interface Response {
+  readonly body: any;
+  readonly headers: Record<string, string>;
+  readonly ok: boolean;
+  readonly status: number;
 }

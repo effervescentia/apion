@@ -1,15 +1,15 @@
 import { expect } from 'chai';
 
 import {
-  createClient,
-  mockAPI,
   AREA,
   CLIENT_KEY,
+  createClient,
   EMAIL,
   FIELD,
   ID,
   MOCK_ARR,
   MOCK_OBJ,
+  mockAPI,
   PASSWORD,
   TARGET_AREA,
   TOKEN,
@@ -30,7 +30,11 @@ suite('Apion', () => {
     async function testClient(customer: string) {
       const configuredClient = client(customer);
 
-      expect(Object.keys(configuredClient)).to.have.members(['login', 'validatePassword', 'auth']);
+      expect(Object.keys(configuredClient)).to.have.members([
+        'login',
+        'validatePassword',
+        'auth',
+      ]);
 
       const loginRes = await configuredClient.login(EMAIL, PASSWORD);
       expect(loginRes).to.eql({ status: 200, body: '', headers: {}, ok: true });
@@ -42,7 +46,7 @@ suite('Apion', () => {
       configuredClient.auth('other token');
 
       expect(Object.keys(authClient)).to.have.members([
-        'grove',
+        'group',
         'promote',
         'search',
         'validate',
@@ -58,12 +62,12 @@ suite('Apion', () => {
         'analytics',
       ]);
 
-      const groveRes = await authClient.grove();
-      expect(groveRes).to.eql({
-        status: 200,
-        body: { grove: 'some_grove' },
-        headers: { 'content-length': '22' },
+      const groupRes = await authClient.group();
+      expect(groupRes).to.eql({
+        body: { name: 'some_group' },
+        headers: { 'content-length': '21' },
         ok: true,
+        status: 200,
       });
 
       const promoteRes = await authClient.promote(AREA, TARGET_AREA);
@@ -78,12 +82,19 @@ suite('Apion', () => {
       const productAttributesRes = await authClient.productAttributes();
       expect(productAttributesRes.ok).to.be.true;
 
-      const productAttributeValuesRes = await authClient.productAttributeValues(AREA, FIELD);
+      const productAttributeValuesRes = await authClient.productAttributeValues(
+        AREA,
+        FIELD
+      );
       expect(productAttributeValuesRes.ok).to.be.true;
 
       const keyClient = authClient.key;
 
-      expect(Object.keys(keyClient)).to.have.members(['addPrimary', 'removePrimary', 'get']);
+      expect(Object.keys(keyClient)).to.have.members([
+        'addPrimary',
+        'removePrimary',
+        'get',
+      ]);
 
       const addKeyRes = await keyClient.addPrimary();
       expect(addKeyRes.ok).to.be.true;
@@ -113,14 +124,31 @@ suite('Apion', () => {
 
       async function testGlobalModel(key: string) {
         const crudClient = authClient[key];
-        expect(Object.keys(crudClient)).to.have.members(['get', 'find', 'create', 'update', 'remove']);
+        expect(Object.keys(crudClient)).to.have.members([
+          'get',
+          'find',
+          'create',
+          'update',
+          'remove',
+        ]);
 
         await testCRUD(crudClient);
       }
 
-      async function testNamespacedModel(modelsClient: any, key: string, area?: string) {
-        const crudClient = modelsClient[key](area);
-        expect(Object.keys(crudClient)).to.have.members(['get', 'find', 'create', 'update', 'remove', 'bulkUpdate']);
+      async function testNamespacedModel(
+        namespacedClient: any,
+        key: string,
+        area?: string
+      ) {
+        const crudClient = namespacedClient[key](area);
+        expect(Object.keys(crudClient)).to.have.members([
+          'get',
+          'find',
+          'create',
+          'update',
+          'remove',
+          'bulkUpdate',
+        ]);
 
         await testCRUD(crudClient);
 
@@ -134,8 +162,8 @@ suite('Apion', () => {
 
       const modelsClient = authClient.models;
 
-      function testModelsClient(client: any) {
-        expect(Object.keys(client)).to.have.members([
+      function testModelsClient(namespacedClient: any) {
+        expect(Object.keys(namespacedClient)).to.have.members([
           'rule',
           'biasingProfile',
           'matchStrategy',
@@ -152,20 +180,20 @@ suite('Apion', () => {
         ]);
       }
 
-      async function testModels(client: any, area?: string) {
-        await testNamespacedModel(client, 'rule', area);
-        await testNamespacedModel(client, 'biasingProfile', area);
-        await testNamespacedModel(client, 'matchStrategy', area);
-        await testNamespacedModel(client, 'redirect', area);
-        await testNamespacedModel(client, 'relatedQuery', area);
-        await testNamespacedModel(client, 'navigation', area);
-        await testNamespacedModel(client, 'filter', area);
-        await testNamespacedModel(client, 'phrase', area);
-        await testNamespacedModel(client, 'zone', area);
-        await testNamespacedModel(client, 'spelling', area);
-        await testNamespacedModel(client, 'synonym', area);
-        await testNamespacedModel(client, 'stopWord', area);
-        await testNamespacedModel(client, 'template', area);
+      async function testModels(namespacedClient: any, area?: string) {
+        await testNamespacedModel(namespacedClient, 'rule', area);
+        await testNamespacedModel(namespacedClient, 'biasingProfile', area);
+        await testNamespacedModel(namespacedClient, 'matchStrategy', area);
+        await testNamespacedModel(namespacedClient, 'redirect', area);
+        await testNamespacedModel(namespacedClient, 'relatedQuery', area);
+        await testNamespacedModel(namespacedClient, 'navigation', area);
+        await testNamespacedModel(namespacedClient, 'filter', area);
+        await testNamespacedModel(namespacedClient, 'phrase', area);
+        await testNamespacedModel(namespacedClient, 'zone', area);
+        await testNamespacedModel(namespacedClient, 'spelling', area);
+        await testNamespacedModel(namespacedClient, 'synonym', area);
+        await testNamespacedModel(namespacedClient, 'stopWord', area);
+        await testNamespacedModel(namespacedClient, 'template', area);
       }
 
       testModelsClient(modelsClient);
@@ -191,7 +219,11 @@ suite('Apion', () => {
           .pageSize(2)
           .build()
       );
-      const searchRes3 = await authClient.search({ query: 'shoe', fields: ['title', 'price'], pageSize: 2 });
+      const searchRes3 = await authClient.search({
+        fields: ['title', 'price'],
+        pageSize: 2,
+        query: 'shoe',
+      });
 
       expect(searchRes1.ok).to.be.true;
       expect(searchRes2.ok).to.be.true;
@@ -215,22 +247,32 @@ suite('Apion', () => {
         'topRefinements',
       ]);
 
-      const recordCountRes = await analyticsClient.recordCount(WINDOWED_REQUEST);
+      const recordCountRes = await analyticsClient.recordCount(
+        WINDOWED_REQUEST
+      );
       expect(recordCountRes.ok).to.be.true;
 
       const qpsRes = await analyticsClient.qps(WINDOWED_REQUEST);
       expect(qpsRes.ok).to.be.true;
 
-      const topSearchesRes = await analyticsClient.topSearches(WINDOWED_REQUEST);
+      const topSearchesRes = await analyticsClient.topSearches(
+        WINDOWED_REQUEST
+      );
       expect(topSearchesRes.ok).to.be.true;
 
-      const topTrendingRes = await analyticsClient.topTrending(WINDOWED_REQUEST);
+      const topTrendingRes = await analyticsClient.topTrending(
+        WINDOWED_REQUEST
+      );
       expect(topTrendingRes.ok).to.be.true;
 
-      const topNullQueriesRes = await analyticsClient.topNullQueries(WINDOWED_REQUEST);
+      const topNullQueriesRes = await analyticsClient.topNullQueries(
+        WINDOWED_REQUEST
+      );
       expect(topNullQueriesRes.ok).to.be.true;
 
-      const topRefinementsRes = await analyticsClient.topRefinements(WINDOWED_REQUEST);
+      const topRefinementsRes = await analyticsClient.topRefinements(
+        WINDOWED_REQUEST
+      );
       expect(topRefinementsRes.ok).to.be.true;
     }
 

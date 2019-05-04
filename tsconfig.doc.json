@@ -1,0 +1,6 @@
+{
+  "extends": "./tsconfig",
+  "compilerOptions": {
+    "strict": false /* Enable all strict type-checking options. */
+  }
+}

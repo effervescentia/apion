@@ -1,39 +1,38 @@
-// tslint:disable:variable-name
-import { Resolvable } from '@/context';
+// tslint:disable:variable-name no-expression-statement
 import RequestContext from '@/context/request';
-import { Named, Transformer, Update } from '@/types';
+import { Named, Request, Transformer, Update } from '@/types';
 import { compose } from '@/utils';
 import HTTPBuilder from './http';
 
-export type ContextualBuilder<C extends object> = Update<C, ConfigBuilder<any, string>>;
+export type ContextualBuilder<C extends object> = Update<
+  C,
+  ConfigBuilder<any, string>
+>;
 
-export function wrapDynamicTransform<C extends object>(
-  builder: ContextualBuilder<C>,
-  extract: (builder: ConfigBuilder<any, string>) => Resolvable<any>
-) {
-  return builder instanceof ConfigBuilder
-    ? extract(builder)
-    : (prev: any, ctx: C) => extract(builder(ctx)).resolve(ctx, prev);
-}
-
-export default class ConfigBuilder<C extends object, K extends string> extends HTTPBuilder<C> implements Named<K> {
-  constructor(public name?: K, protected _parents: ConfigBuilder<any, string>[] = []) {
+export default class ConfigBuilder<C extends object, K extends string>
+  extends HTTPBuilder<C>
+  implements Named<K> {
+  constructor(
+    public name?: K,
+    protected _parents: Array<ConfigBuilder<any, string>> = []
+  ) {
     super();
   }
 
-  ctx(obj: Partial<C>) {
+  public ctx(obj: Partial<C>): this {
     this._context.update(obj);
 
     return this;
   }
 
-  use(contextualBuilder: ContextualBuilder<C>) {
+  public use(contextualBuilder: ContextualBuilder<C>): this {
     if (contextualBuilder instanceof ConfigBuilder) {
       this._parents = [...this._parents, contextualBuilder];
     } else {
       const eventual = new ConfigBuilder('anonymous::eventual');
       eventual._request = new RequestContext([
-        (value, context) => contextualBuilder(context)._request.resolve(context, value),
+        (value, context) =>
+          contextualBuilder(context)._request.resolve(context, value),
       ]);
 
       this._parents = [...this._parents, eventual];
@@ -42,21 +41,23 @@ export default class ConfigBuilder<C extends object, K extends string> extends H
     return this;
   }
 
-  inherit(builder: ConfigBuilder<any, string>) {
+  public inherit(builder: ConfigBuilder<any, string>): this {
     this._parents = [builder, ...this._parents];
 
     return this;
   }
 
-  pipe<T extends ConfigBuilder<any, string>>(trfm: Transformer<this, T>): T {
+  public pipe<T extends ConfigBuilder<any, string>>(
+    trfm: Transformer<this, T>
+  ): T {
     return trfm(this);
   }
 
-  extend(name = 'anonymous') {
+  public extend(name = 'anonymous'): this {
     return this.clone(name);
   }
 
-  flatten(): ConfigBuilder<any, string> {
+  public flatten(): ConfigBuilder<any, string> {
     const flattened = this._parents.reduce(
       (acc, parent) => acc.mergeContexts(parent.flatten()),
       this.newInstance('flattened')
@@ -65,7 +66,7 @@ export default class ConfigBuilder<C extends object, K extends string> extends H
     return this.evolve(flattened.mergeContexts(this) as this);
   }
 
-  protected newInstance(name: string) {
+  protected newInstance(name: string): ConfigBuilder<any, string> {
     return new ConfigBuilder(`${this.name}::${name}`);
   }
 
@@ -81,33 +82,46 @@ export default class ConfigBuilder<C extends object, K extends string> extends H
     return builder;
   }
 
-  protected mergeContexts<T extends object>(builder: ConfigBuilder<T, string>) {
-    this._context.transforms = [...this._context.transforms, ...(builder._context.transforms as any[])];
-    this._request.transforms = [...this._request.transforms, ...builder._request.transforms];
+  protected mergeContexts<T extends object>(
+    builder: ConfigBuilder<T, string>
+  ): this {
+    this._context.transforms = [
+      ...this._context.transforms,
+      ...(builder._context.transforms as any[]),
+    ];
+    this._request.transforms = [
+      ...this._request.transforms,
+      ...builder._request.transforms,
+    ];
 
     return this;
   }
 
-  protected resolveContext = (initialValue = {}): C => {
+  protected readonly resolveContext = (initialValue = {}): C => {
     const inheritedValue = this._parents.length
-      ? compose(...this._parents.map((parent) => (value: any) => parent.resolveContext(value)))(initialValue)
+      ? compose(
+          ...this._parents.map(parent => (value: any) =>
+            parent.resolveContext(value)
+          )
+        )(initialValue)
       : initialValue;
 
     return this._context.resolve(null, inheritedValue);
   };
 
-  protected resolveRequest(context: any, initialValue = {}) {
+  protected resolveRequest(context: any, initialValue = {}): Request {
     const inheritedValue = this._parents.length
-      ? compose(...this._parents.map((parent) => (value: any, ctx: any): any => parent.resolveRequest(ctx, value)))(
-          initialValue,
-          context
-        )
+      ? compose(
+          ...this._parents.map(parent => (value: any, ctx: any): any =>
+            parent.resolveRequest(ctx, value)
+          )
+        )(initialValue, context)
       : initialValue;
 
     return this._request.resolve(context, inheritedValue);
   }
 
-  protected replaceParent(prev: this, next: this) {
+  protected replaceParent(prev: this, next: this): this {
     const index = this._parents.indexOf(prev);
     if (index !== -1) {
       this._parents = [...this._parents];

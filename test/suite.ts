@@ -1,15 +1,17 @@
 import { expect } from 'chai';
-import * as createSuite from 'mocha-suite';
-import * as sinon from 'sinon';
+import createSuite from 'mocha-suite';
+import sinon from 'sinon';
 
-export type TestUtils = {
-  stub: typeof sinon['stub'];
-  spy: typeof sinon['spy'];
+export interface TestUtils {
+  stub: sinon.SinonStubStatic;
+  spy: sinon.SinonSpyStatic;
   expect: typeof expect;
-};
+}
 
-export const extend = <T extends TestUtils>(utilsGenerator: (utils: TestUtils) => Partial<T> = () => ({})) =>
-  createSuite<T, {}>((tests) => {
+export const extend = <T extends TestUtils>(
+  utilsGenerator: (utils: TestUtils) => Partial<T> = () => ({})
+) =>
+  createSuite<T, {}>(tests => {
     let sandbox: sinon.SinonSandbox;
 
     beforeEach(() => (sandbox = sinon.createSandbox()));

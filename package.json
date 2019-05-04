@@ -13,16 +13,15 @@
   "scripts": {
     "start": "echo 'no start script available' && exit -1",
     "test": "nyc --reporter=json --reporter=lcov --reporter=text mocha",
-    "tdd": "mocha --watch --watch-extensions ts,tsx --growl",
-    "prettify": "prettier --write '{src,test}/**/*.{ts,tsx}'"
+    "tdd": "mocha --watch --watch-extensions ts --growl",
+    "prettify": "prettier --write '{src,test}/**/*.ts'"
   },
   "release": {
     "verifyConditions": "condition-circle"
   },
   "nyc": {
     "extension": [
-      ".ts",
-      ".tsx"
+      ".ts"
     ]
   },
   "config": {
@@ -57,6 +56,7 @@
     "sinon": "^6.3.4",
     "sinon-chai": "^3.2.0",
     "ts-node": "^7.0.1",
+    "tsconfig-paths": "^3.8.0",
     "tslib": "^1.9.3",
     "tslint": "^5.11.0",
     "tslint-config-airbnb": "^5.11.0",

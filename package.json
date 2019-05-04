@@ -7,36 +7,68 @@
   "files": [
     "dist/"
   ],
-  "repository": "https://github.com/groupby/apion",
+  "repository": "https://github.com/effervescentia/apion",
   "author": "Ben Teichman <ben.teichman@groupbyinc.com>",
+  "license": "MIT",
   "scripts": {
-    "start": "start-runner -p re-start/presets/typescript",
-    "prepush": "yarn start prepush",
-    "prepublish": "yarn start build"
+    "start": "echo 'no start script available' && exit -1",
+    "test": "nyc --reporter=json --reporter=lcov --reporter=text mocha",
+    "tdd": "mocha --watch --watch-extensions ts,tsx --growl",
+    "prettify": "prettier --write '{src,test}/**/*.{ts,tsx}'"
   },
   "release": {
     "verifyConditions": "condition-circle"
+  },
+  "nyc": {
+    "extension": [
+      ".ts",
+      ".tsx"
+    ]
   },
   "config": {
     "commitizen": {
       "path": "./node_modules/cz-conventional-changelog"
     }
   },
-  "license": "MIT",
-  "devDependencies": {
-    "@types/chai": "^3.4.35",
-    "@types/mocha": "^2.2.40",
-    "@types/sinon": "^2.1.2",
-    "chai": "^3.5.0",
-    "condition-circle": "^1.5.0",
-    "cz-conventional-changelog": "^2.0.0",
-    "husky": "^0.13.3",
-    "mocha": "^3.2.0",
-    "re-start": "^1.9.0",
-    "sinon": "^2.1.0",
-    "start-simple-cli": "^4.1.1",
-    "tslint-config-groupby": "^1.0.0",
-    "typescript": "^2.2.2"
+  "lint-staged": {
+    "{src,test}/**/*.{ts,tsx}": [
+      "prettier --write",
+      "git add"
+    ]
   },
-  "dependencies": {}
+  "devDependencies": {
+    "@types/chai": "^4.1.5",
+    "@types/fetch-mock": "^7.2.3",
+    "@types/mocha": "^5.2.5",
+    "@types/ramda": "^0.26.8",
+    "@types/sinon": "^5.0.2",
+    "@types/sinon-chai": "^3.2.0",
+    "chai": "^4.1.2",
+    "condition-circle": "^2.0.1",
+    "cz-conventional-changelog": "^2.1.0",
+    "fetch-mock": "^7.3.3",
+    "husky": "^1.0.0-rc.15",
+    "lint-staged": "^7.3.0",
+    "mocha": "^5.2.0",
+    "mocha-suite": "^1.0.11",
+    "nyc": "^13.0.1",
+    "prettier": "^1.14.3",
+    "ramda": "^0.26.1",
+    "sinon": "^6.3.4",
+    "sinon-chai": "^3.2.0",
+    "ts-node": "^7.0.1",
+    "tslib": "^1.9.3",
+    "tslint": "^5.11.0",
+    "tslint-config-airbnb": "^5.11.0",
+    "tslint-config-groupby": "^1.0.0",
+    "tslint-config-prettier": "^1.15.0",
+    "typescript": "^3.0.3"
+  },
+  "dependencies": {
+    "@types/escape-string-regexp": "^1.0.0",
+    "@types/node": "^10.11.0",
+    "cross-fetch": "^3.0.2",
+    "escape-string-regexp": "^1.0.5",
+    "url": "^0.11.0"
+  }
 }

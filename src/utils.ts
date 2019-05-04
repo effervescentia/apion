@@ -1,13 +1,3 @@
-import { Context, Store } from './core';
-
-export function extend(target: Context, parent: Context, stores: string[]) {
-  if (parent) {
-    Object.getOwnPropertyNames(parent)
-      .filter((key) => stores.includes(key))
-      .forEach((key) => {
-        if (target[key] && target[key] instanceof Store) {
-          target[key].setParent(parent[key]);
-        }
-      });
-  }
+export function fromEntries<K extends string | number | symbol, V>(entries: [K, V][]): Record<K, V> {
+  return entries.reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {} as Record<K, V>);
 }

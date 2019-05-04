@@ -1,31 +1,21 @@
 {
-  "compileOnSave": false,
   "compilerOptions": {
     "lib": [
-      "ES6",
-      "ES2016.Array.include",
-      "ScriptHost"
-    ],
-    "types": [
-      "mocha"
+      "es6",
+      "es2016.array.include",
+      "es2017.object",
+      "scripthost"
     ],
     "module": "commonjs",
     "moduleResolution": "node",
     "target": "ES5",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "declaration": true
+    "declaration": true,
+    "strict": true
   },
   "exclude": [
     "node_modules",
     "dist"
-  ],
-  "atom": {
-    "rewriteTsconfig": true,
-    "formatOnSave": true
-  },
-  "formatCodeOptions": {
-    "indentSize": 2,
-    "tabSize": 2
-  }
+  ]
 }

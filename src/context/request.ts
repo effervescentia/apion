@@ -47,7 +47,7 @@ export default class RequestContext extends Context<Request> {
 
   public port(port: Apply<number, any>): this {
     return this.set('url', (prev, ctx) => {
-      const { port: prevPort, ...prevURL } = URL.parse(prev || '');
+      const { host: _host, port: prevPort, ...prevURL } = URL.parse(prev || '');
 
       return URL.format({
         ...prevURL,

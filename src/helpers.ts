@@ -9,10 +9,8 @@ export const json = apion
   )
   .parser((body: any) => {
     try {
-      return typeof body === 'string' ? JSON.parse(body) : body;
+      return body && JSON.parse(body);
     } catch (e) {
-      // tslint:disable-next-line:no-console
-      console.error(e);
       throw new Error('unable to parse body as JSON');
     }
   });

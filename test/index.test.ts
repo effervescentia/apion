@@ -1,5 +1,3 @@
-import { expect } from 'chai';
-
 import {
   AREA,
   CLIENT_KEY,
@@ -20,7 +18,7 @@ import suite from './suite';
 const CUSTOMER = 'mycustomer';
 const CUSTOMER_ALT = 'othercustomer';
 
-suite('Apion', () => {
+suite('Apion', ({ expect }) => {
   it('should create a complex client', async () => {
     const mock = mockAPI(CUSTOMER);
     mockAPI(CUSTOMER_ALT, mock);

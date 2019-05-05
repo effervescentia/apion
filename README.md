@@ -31,22 +31,25 @@ const { json } = require('apion/helpers');
 import apion from 'apion';
 import { json } from 'apion/helpers';
 
-const apiConfg = apion.config()
+const apiConfg = apion
+  .config()
   .use(json)
   .url('https://example.com/api');
 
 const profile = apion.action('profile', id => api => api.query(`id=${id}`));
 
-const auth = apion.group('auth', token => ({ token }))
+const auth = apion
+  .group('auth', token => ({ token }))
   .path('auth')
   .headers((prev, { token }) => ({ ...prev, Authorization: token }))
   .nest(profile);
 
-const login = apion.action('login', (user, password) =>
-  api => api.body({ user, password })
-) .post(); 
+const login = apion
+  .action('login', (user, password) => api => api.body({ user, password }))
+  .post();
 
-const root = apion.group('root')
+const root = apion
+  .group('root')
   .use(apiConfig)
   .nest(auth)
   .nest(login);
@@ -55,7 +58,9 @@ const client = root.build();
 
 // implementation
 
-const { body: { token } } = await client.login('test@example.com', '123456');
+const {
+  body: { token },
+} = await client.login('test@example.com', '123456');
 /*
 method: 'POST'
 url: 'https://example.com/api/login'
@@ -85,11 +90,13 @@ Create a `ConfigBuilder` with an optional `name`
 ```ts
 import apion from 'apion';
 
-const myConfig = apion.config('my_config')
+const myConfig = apion
+  .config('my_config')
   .url('https://example.com/api')
   .headers({ 'my-header': 'some value' });
 
-const isRunning = apion.action('isRunning')
+const isRunning = apion
+  .action('isRunning')
   .use(myConfig)
   .path('_health')
   .build();
@@ -118,7 +125,8 @@ const login = apion
   .action('login', (email, password) => api => api.body({ email, password }))
   .post();
 
-const publicClient = apion.group('public')
+const publicClient = apion
+  .group('public')
   .use(json)
   .url('https://example.com/api/public')
   .nest(login)
@@ -138,10 +146,10 @@ body: '{"email":"test@example.com","password":"123456"}'
 Used to dynamically set properties in the context for nested builders.
 
 ```ts
-const profile = apion.action('profile')
-  .path('profile');
+const profile = apion.action('profile').path('profile');
 
-const authClient = apion.group('auth', token => ({ token }))
+const authClient = apion
+  .group('auth', token => ({ token }))
   .url('https://example.com/api/admin')
   .headers((prev, { token }) => ({ ...prev, Authorization: token }))
   .nest(profile)
@@ -159,11 +167,11 @@ body: -
 It can also be used to set more complex request properies by returning a callback which receives the containing `GroupBuilder`.
 
 ```ts
-const profile = apion.action('profile')
-  .path('profile');
+const profile = apion.action('profile').path('profile');
 
-const userClient = apion.group('user', (user, password) =>
-    api => api.path(user).headers({ Authorization: password })
+const userClient = apion
+  .group('user', (user, password) => api =>
+    api.path(user).headers({ Authorization: password })
   )
   .url('https://example.com/api/admin/user')
   .nest(profile)
@@ -192,18 +200,21 @@ Automatically injects a builder to be used for creating requests.
 import apion from 'apion';
 import { json } from 'apion/helpers';
 
-const requestBuilder = apion.builder()
+const requestBuilder = apion
+  .builder()
   .with('range', (start, end) => ({ start, end }))
   .with('interval')
   .with('timezone');
 
-const getTimeseries = apion.action('timeseries', requestBuilder)
+const getTimeseries = apion
+  .action('timeseries', requestBuilder)
   .use(json)
   .url('https://example.com/api/timeseries')
   .post();
 
-await getTimeseries((req) =>
-  req.range(10, 200)
+await getTimeseries(req =>
+  req
+    .range(10, 200)
     .interval(25)
     .timezone('UTC')
 );
@@ -222,9 +233,10 @@ Create a `RequestBuilder` with an optional `formatter`
 - `formatter` _Function_: Sets a formatting callback to construct the final request body.
 
 ```ts
-import apion from 'apion'
+import apion from 'apion';
 
-const searchRequestBuilder = apion.builder()
+const searchRequestBuilder = apion
+  .builder()
   .with('query')
   .with('attributes', (...attributes) => ({ attributes }))
   .with('range', (start, end) => ({ range: { start, end } }));
@@ -245,13 +257,13 @@ creates request bodies of the form:
 Used to format the generated request body.
 
 ```ts
-import apion from 'apion'
+import apion from 'apion';
 
-const searchRequestBuilder =
-  apion.builder((payload) => ({ type: 'search', payload }))
-    .with('query')
-    .with('pageSize')
-    .with('sort', (attribute, order) => ({ sort: { attribute, order } }));
+const searchRequestBuilder = apion
+  .builder(payload => ({ type: 'search', payload }))
+  .with('query')
+  .with('pageSize')
+  .with('sort', (attribute, order) => ({ sort: { attribute, order } }));
 
 /*
 creates request bodies of the form:
@@ -279,8 +291,7 @@ The base `class` for `ConfigBuilder`, `GroupBuilder` and `ActionBuilder`. Contai
 ```ts
 import apion from 'apion';
 
-apion.config()
-  .url('https://example.com');
+apion.config().url('https://example.com');
 ```
 
 ##### transform
@@ -290,7 +301,8 @@ A callback which is passed the previous value and the context object and should 
 ```ts
 import apion from 'apion';
 
-apion.config()
+apion
+  .config()
   .ctx({ path: 'some/path' })
   .url('https://example.com')
   .url((prev, ctx) => `${prev}/${ctx.path}`);
@@ -326,11 +338,13 @@ apion.config().query('x=y&a=10');
 ```ts
 import apion from 'apion';
 
-apion.config()
+apion
+  .config()
   .url('https://example.com/api')
   .path('my/path'); // 'https://example.com/api/my/path'
 
-apion.config()
+apion
+  .config()
   .url('https://example.com/api')
   .path('/my/path'); // 'https://example.com/my/path'
 ```
@@ -340,7 +354,8 @@ apion.config()
 - `method` _String_: A method to set for the request, overrides the exting method.
 
 ```ts
-apion.config()
+apion
+  .config()
   .url('https://example.com/api')
   .method('POST');
 ```
@@ -350,7 +365,8 @@ apion.config()
 ```ts
 import { Method } from 'apion';
 
-apion.config()
+apion
+  .config()
   .url('https://example.com/api')
   .method(Method.POST);
 ```
@@ -406,10 +422,9 @@ Add a callback to transform the request body before sending it.
 ```ts
 import apion from 'aption';
 
-apion.config()
-  .formatter(body =>
-    typeof body === 'string' ? body : JSON.stringify(body)
-  );
+apion
+  .config()
+  .formatter(body => (typeof body === 'string' ? body : JSON.stringify(body)));
 ```
 
 #### parser(parser)
@@ -421,10 +436,9 @@ Add a callback to transform the response body after receiving it.
 ```ts
 import apion from 'aption';
 
-apion.config()
-  .parser(body =>
-    typeof body === 'string' ? JSON.parse(body) : body
-  );
+apion
+  .config()
+  .parser(body => (typeof body === 'string' ? JSON.parse(body) : body));
 ```
 
 ### ConfigBuilder
@@ -453,11 +467,9 @@ Add the configuration from the provided `builder` or the result of the `createBu
 ```ts
 import apion from 'apion';
 
-const config = apion.config()
-  .url('https://example.com');
+const config = apion.config().url('https://example.com');
 
-apion.action('isRunning')
-  .use(config);
+apion.action('isRunning').use(config);
 ```
 
 ##### createBuilder
@@ -467,10 +479,14 @@ Used to have full control over dynamically setting request properties based on t
 ```ts
 import apion from 'apion';
 
-apion.action('login', (user) => ({ user }))
+apion
+  .action('login', user => ({ user }))
   .use(({ user }) =>
     user === 'admin'
-      ? apion.config().path('admin').headers({ Authorization: 'skip' })
+      ? apion
+          .config()
+          .path('admin')
+          .headers({ Authorization: 'skip' })
       : apion.config().path(`user/${user}`)
   )
   .url('https://example.com/api');
@@ -483,10 +499,10 @@ Like `use()` except that configuration transformations are pushed to the top of 
 ```ts
 import apion from 'apion';
 
-const config = apion.config()
-  .url('https://example.com');
+const config = apion.config().url('https://example.com');
 
-apion.action('isRunning')
+apion
+  .action('isRunning')
   .use(apion.config().path('api'))
   .inherit(config);
 ```
@@ -498,9 +514,8 @@ A utility method to help apply re-usable chained methods to a builder instance.
 ```ts
 import apion from 'apion';
 
-const configure = api => api
-  .url('https://example.com/api')
-  .headers({ 'my-header': 'some value' });
+const configure = api =>
+  api.url('https://example.com/api').headers({ 'my-header': 'some value' });
 
 // hard to chain
 const test = configure(apion.action('test'));
@@ -516,11 +531,9 @@ Clone a builder instance in order to create an extended version of it.
 ```ts
 import apion from 'apion';
 
-const config = apion.config()
-  .url('https://example.com');
+const config = apion.config().url('https://example.com');
 
-const extended = config.extend()
-  .path('api');
+const extended = config.extend().path('api');
 ```
 
 ### GroupBuilder
@@ -536,8 +549,7 @@ Override or set the builder's `constructor` to be used to provide dynamic contex
 ```ts
 import apion from 'apion';
 
-apion.group('auth')
-  .ctor(token => ({ token }));
+apion.group('auth').ctor(token => ({ token }));
 ```
 
 #### nest([name], builder)
@@ -563,6 +575,78 @@ Override or set the builder's `constructor` to be used to provide dynamic contex
 
 - `constructor` _Function_: A callback used to dynamically set the context for nested builders (see [constructor](#constructor)).
 - `requestBuilder` _RequestBuilder_: An instance of a `RequestBuilder` used to inject a simple builder pattern when constructing complex request bodies (see [requestBuilder](#requestBuilder)).
+
+### RequestBuilder
+
+Used to construct chainable request builders to simplify the construction of complex request bodies.
+
+#### with(name, [handler])
+
+Add a chainable method with the name `name` to the generated request builder.
+A custom `handler` can be provided to control how the final value will be set in the request body.
+
+- `name` _String_: The name of the method that will be generated. If no handler is provided then it will also be the name of the resulting property on the request body. The name `build` cannot be used as it is reserved for use by the library.
+
+- `handler` _Function_: A callback to merge the parameters of the builder method into the request body object.
+
+```ts
+import apion from 'apion';
+
+apion
+  .builder()
+  .with('query')
+  // which is the same as
+  .with('query', query => ({ query }));
+
+// with multiple arguments
+apion.builder().with('range', (start, end) => ({ range: { start, end } }));
+```
+
+#### use(builder)
+
+Inherit the property handlers from another `RequestBuilder`, useful if you have multiple endpoints that share common request properties.
+
+- `builder` _RequestBuilder_: The builder to inherit properties from.
+
+```ts
+import apion from 'apion';
+
+const rootBuilder = apion
+  .builder()
+  .with('id')
+  .with('parameters', (...parameters) => ({ parameters }));
+
+const inheritingBuilder = apion
+  .builder()
+  .use(rootBuilder)
+  .with('session', id => ({ session: { id } }));
+```
+
+#### build()
+
+Generate the client-facing request builder class. The only pre-determined property on the builder is `build()` which will return the final request body.
+
+```ts
+import apion from 'apion';
+
+const SpecialRequestBuilder = apion
+  .builder()
+  .with('name')
+  .with('properties', (...properties) => ({ properties }));
+
+const builder = new SpecialRequestBuilder();
+
+builder
+  .name('ben')
+  .properties('lastUpdated', 'id', 'title')
+  .build();
+/*
+{
+  name: 'ben',
+  properties: ['lastUpdated', 'id', 'title']
+}
+*/
+```
 
 ## Helpers
 

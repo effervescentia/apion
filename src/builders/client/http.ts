@@ -4,32 +4,50 @@ import Context from '@/context';
 import RequestContext from '@/context/request';
 import { ContextualUpdate, Merger, Phase, Transformer } from '@/types';
 
+export function wrapResolver<T, C>(
+  handler: ContextualUpdate<C, T>,
+  merge?: Merger<T>
+): (prev?: T, ctx?: any) => T {
+  return (prev?: T, ctx?: any) =>
+    typeof handler === 'function'
+      ? (handler as (prev: T, ctx: C) => any)(prev!, ctx)
+      : merge
+      ? merge(prev!, handler)
+      : handler;
+}
+
 export default class HTTPBuilder<C extends object> {
-  // tslint:disable-next-line:readonly-keyword
+  // tslint:disable:readonly-keyword
+  /**
+   * used to track transformations to the context
+   */
   protected _context: Context<C> = new Context();
-  // tslint:disable-next-line:readonly-keyword
+  /**
+   * used to track transformations to the request
+   */
   protected _request: RequestContext = new RequestContext();
+  // tslint:enable:readonly-keyword
 
   public url(url: ContextualUpdate<C, string>): this {
-    this._request.url(this.resolver(url));
+    this._request.url(wrapResolver(url));
 
     return this;
   }
 
   public port(port: ContextualUpdate<C, number>): this {
-    this._request.port(this.resolver(port));
+    this._request.port(wrapResolver(port));
 
     return this;
   }
 
   public query(query: ContextualUpdate<C, string>): this {
-    this._request.query(this.resolver(query));
+    this._request.query(wrapResolver(query));
 
     return this;
   }
 
   public path(path: ContextualUpdate<C, string>): this {
-    this._request.path(this.resolver(path));
+    this._request.path(wrapResolver(path));
 
     return this;
   }
@@ -57,14 +75,14 @@ export default class HTTPBuilder<C extends object> {
 
   public headers(headers: ContextualUpdate<C, Record<string, string>>): this {
     this._request.headers(
-      this.resolver(headers, (prev, next) => ({ ...prev, ...next }))
+      wrapResolver(headers, (prev, next) => ({ ...prev, ...next }))
     );
 
     return this;
   }
 
   public body<T>(body: ContextualUpdate<C, unknown, T>): this {
-    this._request.body(this.resolver(body));
+    this._request.body(wrapResolver(body));
 
     return this;
   }
@@ -79,17 +97,5 @@ export default class HTTPBuilder<C extends object> {
     this._request.middleware(Phase.FORMAT, formatter);
 
     return this;
-  }
-
-  private resolver<T>(
-    handler: ContextualUpdate<C, T>,
-    merge?: Merger<T>
-  ): (prev?: T, ctx?: any) => T {
-    return (prev?: T, ctx?: any) =>
-      typeof handler === 'function'
-        ? (handler as (prev: T, ctx: C) => any)(prev!, ctx)
-        : merge
-        ? merge(prev!, handler)
-        : handler;
   }
 }

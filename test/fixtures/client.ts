@@ -46,7 +46,7 @@ export default function createClient(mockFetch: any) {
     .config('stream_config')
     .use(ingestPath)
     .use(clientKeyBodyAuth);
-  const windowedConfig = (api: GroupBuilder<any, string, any>) =>
+  const windowedConfig = (api: GroupBuilder<any, string, any, any>) =>
     api.ctor((body: any) => (_api: any) => _api.body(body)).post();
 
   const login = apion
@@ -142,7 +142,7 @@ export default function createClient(mockFetch: any) {
     .action('remove', (id: string) => api => api.path(id))
     .delete();
 
-  const CRUD = <T extends GroupBuilder<any, string, any>>(api: T) =>
+  const CRUD = <T extends GroupBuilder<any, string, any, any>>(api: T) =>
     api
       .nest(get)
       .nest(find)
@@ -191,7 +191,7 @@ export default function createClient(mockFetch: any) {
   const stopWordModel = namespacedModule('stopWord');
   const templateModel = namespacedModule('template');
 
-  const withModels = (api: GroupBuilder<any, string, any>) =>
+  const withModels = (api: GroupBuilder<any, string, any, any>) =>
     api
       .nest(ruleModel)
       .nest(navigationModel)

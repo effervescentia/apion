@@ -21,14 +21,18 @@ export function config<T extends object, K extends string = string>(
 export function group<K extends string, A extends any[], C extends object>(
   name: K,
   ctor?: Constructor<K, A, C>
-): GroupBuilder<C, K, {}> {
+): GroupBuilder<C, K, {}, A> {
   return new GroupBuilder(name, ctor);
 }
 
-export function action<K extends string, A extends any[], C extends object>(
+export function action<
+  K extends string,
+  A extends any[] = [],
+  C extends object = {}
+>(
   name: K,
   ctorOrBuilder?: Constructor<K, A, C> | RequestBuilder<C>
-): ActionBuilder<C, K, {}> {
+): ActionBuilder<C, K, {}, A> {
   return new ActionBuilder(name, ctorOrBuilder);
 }
 

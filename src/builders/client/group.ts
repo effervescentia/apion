@@ -8,6 +8,10 @@ import { Lambda } from '@/types';
 import { fromEntries } from '@/utils';
 import ConfigBuilder from './config';
 
+export type GenericGroupBuilder = GroupBuilder<any, string, any, any>;
+
+export type NameOf<T> = T extends ConfigBuilder<any, infer R> ? R : never;
+
 export type Constructor<K extends string, T extends any[], R extends object> =
   | Lambda<T, R>
   | Lambda<
@@ -25,18 +29,28 @@ export type ActionConstructor<
 
 export type BuiltClient<
   A extends any[],
-  X extends Record<string, GroupBuilder<any, string, any>>
+  X extends Record<string, GenericGroupBuilder>
 > =
   | Lambda<A, Record<keyof X, any>>
-  | Record<keyof X, any>
   | ((Lambda<A, Promise<Response>> | Lambda<[], Promise<Response>>) &
       Record<keyof X, any>)
-  | ((builder: RequestBuilderInstance<any>) => void);
+  | ((builder: RequestBuilderInstance<any>) => void)
+  | Record<keyof X, any>;
+
+export type BuiltClient2<
+  A,
+  X extends Record<string, GenericGroupBuilder>
+> = A extends any[]
+  ? (
+      | Lambda<A, Record<keyof X, any>>
+      | ((Lambda<A, Promise<Response>> | Lambda<[], Promise<Response>>) &
+          Record<keyof X, any>))
+  : Record<keyof X, any>;
 
 export default class GroupBuilder<
   C extends object,
   K extends string,
-  X extends Record<string, GroupBuilder<any, any, any>>,
+  X extends Record<string, GenericGroupBuilder>,
   A extends any[] = never
 > extends ConfigBuilder<C, K> {
   // tslint:disable-next-line:readonly-keyword
@@ -54,21 +68,21 @@ export default class GroupBuilder<
     this._ctor = ctor;
   }
 
-  public nest<N extends string, T extends GroupBuilder<any, string, any>>(
+  public nest<N extends string, T extends GenericGroupBuilder>(
     name: N,
     builder: T
-  ): GroupBuilder<C, K, X & Record<N, T>>;
-  public nest<N extends string, T extends GroupBuilder<any, N, any>>(
+  ): GroupBuilder<C, K, X & Record<N, T>, A>;
+  public nest<T extends GenericGroupBuilder>(
     builder: T
-  ): GroupBuilder<C, K, X & Record<N, T>>;
-  public nest<N extends string, T extends GroupBuilder<any, string, any>>(
+  ): GroupBuilder<C, K, X & Record<NameOf<T>, T>, A>;
+  public nest<N extends string, T extends GenericGroupBuilder>(
     builderOrName: N | T,
     builder?: T
-  ): GroupBuilder<C, K, X & Record<N, T>> {
+  ): GroupBuilder<C, K, X & Record<N, T>, A> {
     if (typeof builderOrName === 'string' && builder) {
       this.addChild(builderOrName, builder);
     } else {
-      const namedBuilder = builderOrName as GroupBuilder<any, string, any>;
+      const namedBuilder = builderOrName as GenericGroupBuilder;
 
       this.addChild(namedBuilder.name!, namedBuilder);
     }
@@ -82,10 +96,14 @@ export default class GroupBuilder<
     return this;
   }
 
+  /**
+   * build a client with this builder as the root
+   * @param fetch an override for the fetch instance used by the resulting client
+   */
   public build(fetch: typeof _fetch = _fetch): BuiltClient<A, X> {
     if (this._ctor) {
       return (...args: A) => {
-        const transient = this.clone('group_ctor');
+        const transient = this.extend('group_ctor');
 
         this.wrappedConstructor(transient as any)(...args);
 
@@ -96,6 +114,14 @@ export default class GroupBuilder<
     return this.buildChildren(fetch);
   }
 
+  public extend(name: string): this {
+    return this.evolve(this.newInstance(name) as any);
+  }
+
+  /**
+   * wrap the constructor with context update handlers
+   * @param self an override for the builder to accept new transformations
+   */
   protected wrappedConstructor(self = this): (...args: A) => void {
     return (...args) => {
       const context = (this._ctor as Lambda<A, any>)(...args);
@@ -108,6 +134,11 @@ export default class GroupBuilder<
     };
   }
 
+  /**
+   * build the child clients of this builder
+   * @param fetch an override for the fetch instance used by the resulting client
+   * @param mixin a builder to inherit from before building the child clients
+   */
   protected buildChildren(
     fetch: typeof _fetch,
     mixin?: this
@@ -127,17 +158,13 @@ export default class GroupBuilder<
     return new GroupBuilder(`${this.name}::${name}`);
   }
 
-  protected clone(name: string): this {
-    return this.evolve(this.newInstance(name) as this);
-  }
-
   protected evolve(builder: this): this {
     super.evolve(builder);
     builder._ctor = this._ctor;
     builder._children = Object.keys(this._children).reduce(
       (acc, key) => ({
         ...acc,
-        [key]: this._children[key].replaceParent(this, builder),
+        [key]: this._children[key].replaceParent(this as any, builder as any),
       }),
       {} as any
     );
@@ -145,7 +172,12 @@ export default class GroupBuilder<
     return builder;
   }
 
-  private addChild<T extends ConfigBuilder<any, string>>(
+  /**
+   * nest a child builder under this builder with a given name
+   * @param name the name of the property on the constructed client
+   * @param builder a builder to nest as a child of this builder, it must extend GroupBuilder
+   */
+  private addChild<T extends GenericGroupBuilder>(
     name: string,
     builder: T
   ): void {
@@ -153,6 +185,10 @@ export default class GroupBuilder<
       throw new Error(
         `all children must have unique names, duplicate "${name}" not added`
       );
+    }
+
+    if (!(builder instanceof GroupBuilder)) {
+      throw new Error('expected builder to be an instance of GroupBuilder');
     }
 
     const flattened = builder.flatten().inherit(this);

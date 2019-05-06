@@ -1,0 +1,792 @@
+<!doctype html>
+<html class="default no-js">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>apion</title>
+	<meta name="description" content="">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+<header>
+	<div class="tsd-page-toolbar">
+		<div class="container">
+			<div class="table-wrap">
+				<div class="table-cell" id="tsd-search" data-index="assets/js/search.js" data-base=".">
+					<div class="field">
+						<label for="tsd-search-field" class="tsd-widget search no-caption">Search</label>
+						<input id="tsd-search-field" type="text" />
+					</div>
+					<ul class="results">
+						<li class="state loading">Preparing search index...</li>
+						<li class="state failure">The search index is not available</li>
+					</ul>
+					<a href="index.html" class="title">apion</a>
+				</div>
+				<div class="table-cell" id="tsd-widgets">
+					<div id="tsd-filter">
+						<a href="#" class="tsd-widget options no-caption" data-toggle="options">Options</a>
+						<div class="tsd-filter-group">
+							<div class="tsd-select" id="tsd-filter-visibility">
+								<span class="tsd-select-label">All</span>
+								<ul class="tsd-select-list">
+									<li data-value="public">Public</li>
+									<li data-value="protected">Public/Protected</li>
+									<li data-value="private" class="selected">All</li>
+								</ul>
+							</div>
+							<input type="checkbox" id="tsd-filter-inherited" checked />
+							<label class="tsd-widget" for="tsd-filter-inherited">Inherited</label>
+							<input type="checkbox" id="tsd-filter-externals" checked />
+							<label class="tsd-widget" for="tsd-filter-externals">Externals</label>
+							<input type="checkbox" id="tsd-filter-only-exported" />
+							<label class="tsd-widget" for="tsd-filter-only-exported">Only exported</label>
+						</div>
+					</div>
+					<a href="#" class="tsd-widget menu no-caption" data-toggle="menu">Menu</a>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="tsd-page-title">
+		<div class="container">
+			<ul class="tsd-breadcrumb">
+				<li>
+					<a href="globals.html">Globals</a>
+				</li>
+			</ul>
+			<h1> apion</h1>
+		</div>
+	</div>
+</header>
+<div class="container container-main">
+	<div class="row">
+		<div class="col-8 col-content">
+			<div class="tsd-panel tsd-typography">
+				<h1 id="apion-circleci-branch-npm-code-style-prettier">apion <img src="https://img.shields.io/circleci/project/github/effervescentia/apion/master.svg?style=flat-square" alt="CircleCI branch"> <img src="https://img.shields.io/npm/v/apion.svg?style=flat-square" alt="npm"> <a href="https://github.com/prettier/prettier"><img src="https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square" alt="code style: prettier"></a></h1>
+				<blockquote>
+					<p>JavaScript API client generator</p>
+				</blockquote>
+				<p>Inspired by <a href="https://github.com/theonjs/theon">theon</a> but designed to be a simpler alternative.</p>
+				<h2 id="usage">Usage</h2>
+				<p>Install the package <code>apion</code> using <code>npm</code>, <code>yarn</code> or your preferred package manager. For example:</p>
+				<pre><code class="language-sh">npm install apion</code></pre>
+				<p>Import in your code:</p>
+				<pre><code class="language-ts"><span class="hljs-keyword">import</span> apion <span class="hljs-keyword">from</span> <span class="hljs-string">'apion'</span>;
+<span class="hljs-comment">// or import * as apion from 'apion'</span>
+<span class="hljs-keyword">import</span> { json } <span class="hljs-keyword">from</span> <span class="hljs-string">'apion/helpers'</span>;</code></pre>
+				<pre><code class="language-js"><span class="hljs-keyword">const</span> apion = <span class="hljs-built_in">require</span>(<span class="hljs-string">'apion'</span>);
+<span class="hljs-keyword">const</span> { json } = <span class="hljs-built_in">require</span>(<span class="hljs-string">'apion/helpers'</span>);</code></pre>
+				<h3 id="examples">Examples</h3>
+				<pre><code class="language-ts"><span class="hljs-keyword">import</span> apion <span class="hljs-keyword">from</span> <span class="hljs-string">'apion'</span>;
+<span class="hljs-keyword">import</span> { json } <span class="hljs-keyword">from</span> <span class="hljs-string">'apion/helpers'</span>;
+
+<span class="hljs-keyword">const</span> apiConfg = apion
+  .config()
+  .use(json)
+  .url(<span class="hljs-string">'https://example.com/api'</span>);
+
+<span class="hljs-keyword">const</span> profile = apion.action(<span class="hljs-string">'profile'</span>, <span class="hljs-function"><span class="hljs-params">id</span> =&gt;</span> api =&gt; api.query(<span class="hljs-string">`id=<span class="hljs-subst">${id}</span>`</span>));
+
+<span class="hljs-keyword">const</span> auth = apion
+  .group(<span class="hljs-string">'auth'</span>, <span class="hljs-function"><span class="hljs-params">token</span> =&gt;</span> ({ token }))
+  .path(<span class="hljs-string">'auth'</span>)
+  .headers(<span class="hljs-function">(<span class="hljs-params">prev, { token }</span>) =&gt;</span> ({ ...prev, Authorization: token }))
+  .nest(profile);
+
+<span class="hljs-keyword">const</span> login = apion
+  .action(<span class="hljs-string">'login'</span>, <span class="hljs-function">(<span class="hljs-params">user, password</span>) =&gt;</span> api =&gt; api.body({ user, password }))
+  .post();
+
+<span class="hljs-keyword">const</span> root = apion
+  .group(<span class="hljs-string">'root'</span>)
+  .use(apiConfig)
+  .nest(auth)
+  .nest(login);
+
+<span class="hljs-keyword">const</span> client = root.build();
+
+<span class="hljs-comment">// implementation</span>
+
+<span class="hljs-keyword">const</span> {
+  body: { token },
+} = <span class="hljs-keyword">await</span> client.login(<span class="hljs-string">'test@example.com'</span>, <span class="hljs-string">'123456'</span>);
+<span class="hljs-comment">/*
+method: 'POST'
+url: 'https://example.com/api/login'
+headers: { 'content-type': 'application/json' }
+body: '{"email":"test@example.com","password":"123456"}'
+*/</span>
+
+<span class="hljs-keyword">const</span> { body: profile } = <span class="hljs-keyword">await</span> cient.auth(token).profile(<span class="hljs-string">'abc123'</span>);
+<span class="hljs-comment">/*
+method: 'GET'
+url: 'https://example.com/api/auth/profile?id=abc123'
+headers: { 'content-type': 'application/json', authorization: &lt;token&gt; }
+body: -
+*/</span></code></pre>
+				<h2 id="api">API</h2>
+				<p>Methods exposed on <code>apion</code>.</p>
+				<h3 id="apion-config-name-">apion.config([name])</h3>
+				<p>Create a <code>ConfigBuilder</code> with an optional <code>name</code></p>
+				<ul>
+					<li><code>name</code> <em>String</em>: Sets the name of the configuration for reference in debugging.</li>
+				</ul>
+				<pre><code class="language-ts"><span class="hljs-keyword">import</span> apion <span class="hljs-keyword">from</span> <span class="hljs-string">'apion'</span>;
+
+<span class="hljs-keyword">const</span> myConfig = apion
+  .config(<span class="hljs-string">'my_config'</span>)
+  .url(<span class="hljs-string">'https://example.com/api'</span>)
+  .headers({ <span class="hljs-string">'my-header'</span>: <span class="hljs-string">'some value'</span> });
+
+<span class="hljs-keyword">const</span> isRunning = apion
+  .action(<span class="hljs-string">'isRunning'</span>)
+  .use(myConfig)
+  .path(<span class="hljs-string">'_health'</span>)
+  .build();
+
+<span class="hljs-keyword">await</span> isRunning();
+<span class="hljs-comment">/*
+method: 'GET'
+url: 'https://example.com/api/_health'
+headers: { 'my-header': 'some value' }
+body: -
+*/</span></code></pre>
+				<h3 id="apion-group-name-constructor-">apion.group(name, [constructor])</h3>
+				<p>Create a <code>GroupBuilder</code> with a <code>name</code> and an optional <code>constructor</code> for dynamically setting context for nested builders</p>
+				<ul>
+					<li><code>name</code> <em>String</em>: Sets the name of the group which by default is used as the name of the property added when nesting under another group or action.</li>
+					<li><code>constructor</code> <em>Function</em>: A callback used to dynamically set the context for nested builders.</li>
+				</ul>
+				<pre><code class="language-ts"><span class="hljs-keyword">import</span> apion <span class="hljs-keyword">from</span> <span class="hljs-string">'apion'</span>;
+<span class="hljs-keyword">import</span> { json } <span class="hljs-keyword">from</span> <span class="hljs-string">'apion/helpers'</span>;
+
+<span class="hljs-keyword">const</span> login = apion
+  .action(<span class="hljs-string">'login'</span>, <span class="hljs-function">(<span class="hljs-params">email, password</span>) =&gt;</span> api =&gt; api.body({ email, password }))
+  .post();
+
+<span class="hljs-keyword">const</span> publicClient = apion
+  .group(<span class="hljs-string">'public'</span>)
+  .use(json)
+  .url(<span class="hljs-string">'https://example.com/api/public'</span>)
+  .nest(login)
+  .build();
+
+<span class="hljs-keyword">await</span> publicClient.login(<span class="hljs-string">'test@example.com'</span>, <span class="hljs-string">'123456'</span>);
+<span class="hljs-comment">/*
+method: 'POST'
+url: 'https://example.com/api/public/login'
+headers: { 'content-type': 'application/json' }
+body: '{"email":"test@example.com","password":"123456"}'
+*/</span></code></pre>
+				<h4 id="constructor">constructor</h4>
+				<p>Used to dynamically set properties in the context for nested builders.</p>
+				<pre><code class="language-ts"><span class="hljs-keyword">const</span> profile = apion.action(<span class="hljs-string">'profile'</span>).path(<span class="hljs-string">'profile'</span>);
+
+<span class="hljs-keyword">const</span> authClient = apion
+  .group(<span class="hljs-string">'auth'</span>, <span class="hljs-function"><span class="hljs-params">token</span> =&gt;</span> ({ token }))
+  .url(<span class="hljs-string">'https://example.com/api/admin'</span>)
+  .headers(<span class="hljs-function">(<span class="hljs-params">prev, { token }</span>) =&gt;</span> ({ ...prev, Authorization: token }))
+  .nest(profile)
+  .build();
+
+<span class="hljs-keyword">await</span> authClient(<span class="hljs-string">'XXX-000-AAA'</span>).profile();
+<span class="hljs-comment">/*
+method: 'GET'
+url: 'https://example.com/api/admin/profile'
+headers: { authorization: 'XXX-000-AAA' }
+body: -
+*/</span></code></pre>
+				<p>It can also be used to set more complex request properies by returning a callback which receives the containing <code>GroupBuilder</code>.</p>
+				<pre><code class="language-ts"><span class="hljs-keyword">const</span> profile = apion.action(<span class="hljs-string">'profile'</span>).path(<span class="hljs-string">'profile'</span>);
+
+<span class="hljs-keyword">const</span> userClient = apion
+  .group(<span class="hljs-string">'user'</span>, <span class="hljs-function">(<span class="hljs-params">user, password</span>) =&gt;</span> api =&gt;
+    api.path(user).headers({ Authorization: password })
+  )
+  .url(<span class="hljs-string">'https://example.com/api/admin/user'</span>)
+  .nest(profile)
+  .build();
+
+<span class="hljs-keyword">await</span> userClient(<span class="hljs-string">'greg123'</span>, <span class="hljs-string">'456789'</span>).profile();
+<span class="hljs-comment">/*
+method: 'GET'
+url: 'https://example.com/api/admin/user/greg123/profile'
+headers: { authorization: '456789' }
+body: -
+*/</span></code></pre>
+				<h3 id="apion-action-name-constructor-requestbuilder-">apion.action(name, [constructor | requestBuilder])</h3>
+				<ul>
+					<li><code>name</code> <em>String</em>: Sets the name of the action which by default is used as the name of the property added when nesting under another group or action.</li>
+					<li><code>constructor</code> <em>Function</em>: A callback used to dynamically set the context for nested builders.</li>
+					<li><code>requestBuilder</code> <em>RequestBuilder</em>: An instance of a <code>RequestBuilder</code> used to inject a simple builder pattern when constructing complex request bodies.</li>
+				</ul>
+				<h4 id="requestbuilder">requestBuilder</h4>
+				<p>Automatically injects a builder to be used for creating requests.</p>
+				<pre><code class="language-ts"><span class="hljs-keyword">import</span> apion <span class="hljs-keyword">from</span> <span class="hljs-string">'apion'</span>;
+<span class="hljs-keyword">import</span> { json } <span class="hljs-keyword">from</span> <span class="hljs-string">'apion/helpers'</span>;
+
+<span class="hljs-keyword">const</span> requestBuilder = apion
+  .builder()
+  .with(<span class="hljs-string">'range'</span>, <span class="hljs-function">(<span class="hljs-params">start, end</span>) =&gt;</span> ({ start, end }))
+  .with(<span class="hljs-string">'interval'</span>)
+  .with(<span class="hljs-string">'timezone'</span>);
+
+<span class="hljs-keyword">const</span> getTimeseries = apion
+  .action(<span class="hljs-string">'timeseries'</span>, requestBuilder)
+  .use(json)
+  .url(<span class="hljs-string">'https://example.com/api/timeseries'</span>)
+  .post();
+
+<span class="hljs-keyword">await</span> getTimeseries(<span class="hljs-function"><span class="hljs-params">req</span> =&gt;</span>
+  req
+    .range(<span class="hljs-number">10</span>, <span class="hljs-number">200</span>)
+    .interval(<span class="hljs-number">25</span>)
+    .timezone(<span class="hljs-string">'UTC'</span>)
+);
+<span class="hljs-comment">/*
+method: 'POST'
+url: 'https://example.com/api/timeseries'
+headers: { 'content-type': 'application/json' }
+body: '{"start":10,"end":200,"interval":25,"timezone":"UTC"}'
+*/</span></code></pre>
+				<h3 id="apion-builder-formatter-">apion.builder([formatter])</h3>
+				<p>Create a <code>RequestBuilder</code> with an optional <code>formatter</code></p>
+				<ul>
+					<li><code>formatter</code> <em>Function</em>: Sets a formatting callback to construct the final request body.</li>
+				</ul>
+				<pre><code class="language-ts"><span class="hljs-keyword">import</span> apion <span class="hljs-keyword">from</span> <span class="hljs-string">'apion'</span>;
+
+<span class="hljs-keyword">const</span> searchRequestBuilder = apion
+  .builder()
+  .with(<span class="hljs-string">'query'</span>)
+  .with(<span class="hljs-string">'attributes'</span>, <span class="hljs-function">(<span class="hljs-params">...attributes</span>) =&gt;</span> ({ attributes }))
+  .with(<span class="hljs-string">'range'</span>, <span class="hljs-function">(<span class="hljs-params">start, end</span>) =&gt;</span> ({ range: { start, end } }));
+
+<span class="hljs-comment">/*
+creates request bodies of the form:
+
+{
+  query: any,
+  attibutes: any[],
+  range: { start: any, end: any }
+}
+*/</span></code></pre>
+				<h4 id="formatter">formatter</h4>
+				<p>Used to format the generated request body.</p>
+				<pre><code class="language-ts"><span class="hljs-keyword">import</span> apion <span class="hljs-keyword">from</span> <span class="hljs-string">'apion'</span>;
+
+<span class="hljs-keyword">const</span> searchRequestBuilder = apion
+  .builder(<span class="hljs-function"><span class="hljs-params">payload</span> =&gt;</span> ({ <span class="hljs-keyword">type</span>: <span class="hljs-string">'search'</span>, payload }))
+  .with(<span class="hljs-string">'query'</span>)
+  .with(<span class="hljs-string">'pageSize'</span>)
+  .with(<span class="hljs-string">'sort'</span>, <span class="hljs-function">(<span class="hljs-params">attribute, order</span>) =&gt;</span> ({ sort: { attribute, order } }));
+
+<span class="hljs-comment">/*
+creates request bodies of the form:
+
+{
+  type: 'search',
+  payload: {
+    query: any,
+    pageSize: any,
+    sort: { attribute: any, order: any }
+  }
+}
+*/</span></code></pre>
+				<h3 id="httpbuilder">HTTPBuilder</h3>
+				<p>The base <code>class</code> for <code>ConfigBuilder</code>, <code>GroupBuilder</code> and <code>ActionBuilder</code>. Contains utility methods for managing request properties.</p>
+				<h4 id="url-url-transform-">url(url | transform)</h4>
+				<ul>
+					<li><code>url</code> <em>String</em>: An full URL to set for the request, overrides the existing url.</li>
+					<li><code>transform</code> <em>Function</em>: A callback to transform the previous value to the next value.</li>
+				</ul>
+				<pre><code class="language-ts"><span class="hljs-keyword">import</span> apion <span class="hljs-keyword">from</span> <span class="hljs-string">'apion'</span>;
+
+apion.config().url(<span class="hljs-string">'https://example.com'</span>);</code></pre>
+				<h5 id="transform">transform</h5>
+				<p>A callback which is passed the previous value and the context object and should return the next value.</p>
+				<pre><code class="language-ts"><span class="hljs-keyword">import</span> apion <span class="hljs-keyword">from</span> <span class="hljs-string">'apion'</span>;
+
+apion
+  .config()
+  .ctx({ path: <span class="hljs-string">'some/path'</span> })
+  .url(<span class="hljs-string">'https://example.com'</span>)
+  .url(<span class="hljs-function">(<span class="hljs-params">prev, ctx</span>) =&gt;</span> <span class="hljs-string">`<span class="hljs-subst">${prev}</span>/<span class="hljs-subst">${ctx.path}</span>`</span>);</code></pre>
+				<h4 id="port-port-transform-">port(port | transform)</h4>
+				<ul>
+					<li><code>port</code> <em>Number</em>: A port to set for the request, overrides the existing port.</li>
+					<li><code>transform</code> <em>Function</em>: A callback to transform the previous value to the next value. (see <a href="#transform">transform</a>)</li>
+				</ul>
+				<pre><code class="language-ts"><span class="hljs-keyword">import</span> apion <span class="hljs-keyword">from</span> <span class="hljs-string">'apion'</span>;
+
+apion.config().port(<span class="hljs-number">8080</span>);</code></pre>
+				<h4 id="query-query-transform-">query(query | transform)</h4>
+				<ul>
+					<li><code>query</code> <em>String</em>: A query to set for the request, overrides the existing query.</li>
+					<li><code>transform</code> <em>Function</em>: A callback to transform the previous value to the next value. (see <a href="#transform">transform</a>)</li>
+				</ul>
+				<pre><code class="language-ts"><span class="hljs-keyword">import</span> apion <span class="hljs-keyword">from</span> <span class="hljs-string">'apion'</span>;
+
+apion.config().query(<span class="hljs-string">'x=y&amp;a=10'</span>);</code></pre>
+				<h4 id="path-path-transform-">path(path | transform)</h4>
+				<ul>
+					<li><code>path</code> <em>String</em>: A path to set for the request, overrides the existing path. If the path starts with a forward slash (<code>/</code>) then the whole path will be replaced, otherwise it will be added to the existing path.</li>
+					<li><code>transform</code> <em>Function</em>: A callback to transform the previous value to the next value. (see <a href="#transform">transform</a>)</li>
+				</ul>
+				<pre><code class="language-ts"><span class="hljs-keyword">import</span> apion <span class="hljs-keyword">from</span> <span class="hljs-string">'apion'</span>;
+
+apion
+  .config()
+  .url(<span class="hljs-string">'https://example.com/api'</span>)
+  .path(<span class="hljs-string">'my/path'</span>); <span class="hljs-comment">// 'https://example.com/api/my/path'</span>
+
+apion
+  .config()
+  .url(<span class="hljs-string">'https://example.com/api'</span>)
+  .path(<span class="hljs-string">'/my/path'</span>); <span class="hljs-comment">// 'https://example.com/my/path'</span></code></pre>
+				<h4 id="method-method-">method(method)</h4>
+				<ul>
+					<li><code>method</code> <em>String</em>: A method to set for the request, overrides the exting method.</li>
+				</ul>
+				<pre><code class="language-ts">apion
+  .config()
+  .url(<span class="hljs-string">'https://example.com/api'</span>)
+  .method(<span class="hljs-string">'POST'</span>);</code></pre>
+				<blockquote>
+					<p><code>apion</code> also exports its own <code>Method</code> object for easy use</p>
+				</blockquote>
+				<pre><code class="language-ts"><span class="hljs-keyword">import</span> { Method } <span class="hljs-keyword">from</span> <span class="hljs-string">'apion'</span>;
+
+apion
+  .config()
+  .url(<span class="hljs-string">'https://example.com/api'</span>)
+  .method(Method.POST);</code></pre>
+				<h4 id="get-">get()</h4>
+				<p>Sets the request method to <code>GET</code>.</p>
+				<h4 id="post-">post()</h4>
+				<p>Sets the request method to <code>POST</code>.</p>
+				<h4 id="patch-">patch()</h4>
+				<p>Sets the request method to <code>PATCH</code>.</p>
+				<h4 id="put-">put()</h4>
+				<p>Sets the request method to <code>PUT</code>.</p>
+				<h4 id="delete-">delete()</h4>
+				<p>Sets the request method to <code>DELETE</code>.</p>
+				<h4 id="headers-headers-transform-">headers(headers | transform)</h4>
+				<ul>
+					<li><code>headers</code> <em>Object</em>: A headers to set for the request, overrides the existing headers.</li>
+					<li><code>transform</code> <em>Function</em>: A callback to transform the previous value to the next value. (see <a href="#transform">transform</a>)</li>
+				</ul>
+				<pre><code class="language-ts"><span class="hljs-keyword">import</span> apion <span class="hljs-keyword">from</span> <span class="hljs-string">'apion'</span>;
+
+apion.config().headers({ <span class="hljs-string">'content-type'</span>: <span class="hljs-string">'application/json'</span> });</code></pre>
+				<h4 id="body-body-transform-">body(body | transform)</h4>
+				<ul>
+					<li><code>body</code> <em>Object</em>: A body to set for the request, overrides the existing body.</li>
+					<li><code>transform</code> <em>Function</em>: A callback to transform the previous value to the next value. (see <a href="#transform">transform</a>)</li>
+				</ul>
+				<pre><code class="language-ts"><span class="hljs-keyword">import</span> apion <span class="hljs-keyword">from</span> <span class="hljs-string">'apion'</span>;
+
+apion.config().body(<span class="hljs-string">'test@example.com:123456'</span>);</code></pre>
+				<h4 id="formatter-formatter-">formatter(formatter)</h4>
+				<p>Add a callback to transform the request body before sending it.</p>
+				<ul>
+					<li><code>formatter</code> <em>Function</em>: A callback to transform the request body before sending it.</li>
+				</ul>
+				<pre><code class="language-ts"><span class="hljs-keyword">import</span> apion <span class="hljs-keyword">from</span> <span class="hljs-string">'aption'</span>;
+
+apion
+  .config()
+  .formatter(<span class="hljs-function"><span class="hljs-params">body</span> =&gt;</span> (<span class="hljs-keyword">typeof</span> body === <span class="hljs-string">'string'</span> ? body : <span class="hljs-built_in">JSON</span>.stringify(body)));</code></pre>
+				<h4 id="parser-parser-">parser(parser)</h4>
+				<p>Add a callback to transform the response body after receiving it.</p>
+				<ul>
+					<li><code>parser</code> <em>Function</em>: A callback to transform the response body after receiving it.</li>
+				</ul>
+				<pre><code class="language-ts"><span class="hljs-keyword">import</span> apion <span class="hljs-keyword">from</span> <span class="hljs-string">'aption'</span>;
+
+apion
+  .config()
+  .parser(<span class="hljs-function"><span class="hljs-params">body</span> =&gt;</span> (<span class="hljs-keyword">typeof</span> body === <span class="hljs-string">'string'</span> ? <span class="hljs-built_in">JSON</span>.parse(body) : body));</code></pre>
+				<h3 id="configbuilder">ConfigBuilder</h3>
+				<p>Used to construct re-usable updates to context and request properties. Inherits all methods from <code>HTTPBuilder</code>.</p>
+				<h4 id="ctx-obj-">ctx(obj)</h4>
+				<p>Update the context by merging in a new object (uses the same logic as <code>Object.assign()</code>).</p>
+				<ul>
+					<li><code>obj</code> <em>Object</em>: An object that will be merged with the existing context.</li>
+				</ul>
+				<pre><code class="language-ts"><span class="hljs-keyword">import</span> apion <span class="hljs-keyword">from</span> <span class="hljs-string">'apion'</span>;
+
+apion.config().ctx({ id: <span class="hljs-number">123</span> });</code></pre>
+				<h4 id="use-builder-createbuilder-">use(builder | createBuilder)</h4>
+				<p>Add the configuration from the provided <code>builder</code> or the result of the <code>createBuilder</code> function to the builder instance.</p>
+				<ul>
+					<li><code>builder</code> <em>ConfigBuilder</em>: Configuration from this builder will be inherited by the builder instance.</li>
+					<li><code>createBuilder</code> <em>Function</em>: A function which accepts the context object and should return an instance of a <code>ConfigBuilder</code></li>
+				</ul>
+				<pre><code class="language-ts"><span class="hljs-keyword">import</span> apion <span class="hljs-keyword">from</span> <span class="hljs-string">'apion'</span>;
+
+<span class="hljs-keyword">const</span> config = apion.config().url(<span class="hljs-string">'https://example.com'</span>);
+
+apion.action(<span class="hljs-string">'isRunning'</span>).use(config);</code></pre>
+				<h5 id="createbuilder">createBuilder</h5>
+				<p>Used to have full control over dynamically setting request properties based on the context object.</p>
+				<pre><code class="language-ts"><span class="hljs-keyword">import</span> apion <span class="hljs-keyword">from</span> <span class="hljs-string">'apion'</span>;
+
+apion
+  .action(<span class="hljs-string">'login'</span>, <span class="hljs-function"><span class="hljs-params">user</span> =&gt;</span> ({ user }))
+  .use(<span class="hljs-function">(<span class="hljs-params">{ user }</span>) =&gt;</span>
+    user === <span class="hljs-string">'admin'</span>
+      ? apion
+          .config()
+          .path(<span class="hljs-string">'admin'</span>)
+          .headers({ Authorization: <span class="hljs-string">'skip'</span> })
+      : apion.config().path(<span class="hljs-string">`user/<span class="hljs-subst">${user}</span>`</span>)
+  )
+  .url(<span class="hljs-string">'https://example.com/api'</span>);</code></pre>
+				<h4 id="inherit-builder-">inherit(builder)</h4>
+				<p>Like <code>use()</code> except that configuration transformations are pushed to the top of the builder&#39;s inheritance chain.</p>
+				<pre><code class="language-ts"><span class="hljs-keyword">import</span> apion <span class="hljs-keyword">from</span> <span class="hljs-string">'apion'</span>;
+
+<span class="hljs-keyword">const</span> config = apion.config().url(<span class="hljs-string">'https://example.com'</span>);
+
+apion
+  .action(<span class="hljs-string">'isRunning'</span>)
+  .use(apion.config().path(<span class="hljs-string">'api'</span>))
+  .inherit(config);</code></pre>
+				<h4 id="pipe-transform-">pipe(transform)</h4>
+				<p>A utility method to help apply re-usable chained methods to a builder instance.</p>
+				<pre><code class="language-ts"><span class="hljs-keyword">import</span> apion <span class="hljs-keyword">from</span> <span class="hljs-string">'apion'</span>;
+
+<span class="hljs-keyword">const</span> configure = <span class="hljs-function"><span class="hljs-params">api</span> =&gt;</span>
+  api.url(<span class="hljs-string">'https://example.com/api'</span>).headers({ <span class="hljs-string">'my-header'</span>: <span class="hljs-string">'some value'</span> });
+
+<span class="hljs-comment">// hard to chain</span>
+<span class="hljs-keyword">const</span> test = configure(apion.action(<span class="hljs-string">'test'</span>));
+
+<span class="hljs-comment">// easy to chain</span>
+<span class="hljs-keyword">const</span> test = apion.action(<span class="hljs-string">'test'</span>).pipe(configure);</code></pre>
+				<h4 id="extend-">extend()</h4>
+				<p>Clone a builder instance in order to create an extended version of it.</p>
+				<pre><code class="language-ts"><span class="hljs-keyword">import</span> apion <span class="hljs-keyword">from</span> <span class="hljs-string">'apion'</span>;
+
+<span class="hljs-keyword">const</span> config = apion.config().url(<span class="hljs-string">'https://example.com'</span>);
+
+<span class="hljs-keyword">const</span> extended = config.extend().path(<span class="hljs-string">'api'</span>);</code></pre>
+				<h3 id="groupbuilder">GroupBuilder</h3>
+				<p>Used to construct groups of nested builders. Inherits all methods from <code>ConfigBuilder</code>.</p>
+				<h4 id="ctor-constructor-">ctor(constructor)</h4>
+				<p>Override or set the builder&#39;s <code>constructor</code> to be used to provide dynamic context properties.</p>
+				<ul>
+					<li><code>constructor</code> <em>Function</em>: A callback used to dynamically set the context for nested builders (see <a href="#constructor">constructor</a>).</li>
+				</ul>
+				<pre><code class="language-ts"><span class="hljs-keyword">import</span> apion <span class="hljs-keyword">from</span> <span class="hljs-string">'apion'</span>;
+
+apion.group(<span class="hljs-string">'auth'</span>).ctor(<span class="hljs-function"><span class="hljs-params">token</span> =&gt;</span> ({ token }));</code></pre>
+				<h4 id="nest-name-builder-">nest([name], builder)</h4>
+				<p>Add a nested builder to a <code>GroupBuilder</code> or <code>ActionBuilder</code>.</p>
+				<ul>
+					<li><code>name</code> <em>String</em>: A name to override the name on the builder.</li>
+					<li><code>builder</code> <em>GroupBuilder | ActionBuilder</em>: A builder to be nested under this builder instance. If no name is provided, the name provided when constructing the builder will be used.</li>
+				</ul>
+				<h4 id="build-fetch-">build([fetch])</h4>
+				<p>Build an API client with this builder as the root node.</p>
+				<ul>
+					<li><code>fetch</code> <em>Function</em>: A replacement for the <code>fetch</code> instance used under the hood when making requests (defaults to <code>cross-fetch</code>).</li>
+				</ul>
+				<h3 id="actionbuilder">ActionBuilder</h3>
+				<p>Used to construct action builders for sending requests over the network. Inherits all methods from <code>GroupBuilder</code>.</p>
+				<h4 id="ctor-constructor-requestbuilder-">ctor(constructor | requestBuilder)</h4>
+				<p>Override or set the builder&#39;s <code>constructor</code> to be used to provide dynamic context properties.</p>
+				<ul>
+					<li><code>constructor</code> <em>Function</em>: A callback used to dynamically set the context for nested builders (see <a href="#constructor">constructor</a>).</li>
+					<li><code>requestBuilder</code> <em>RequestBuilder</em>: An instance of a <code>RequestBuilder</code> used to inject a simple builder pattern when constructing complex request bodies (see <a href="#requestBuilder">requestBuilder</a>).</li>
+				</ul>
+				<h3 id="requestbuilder">RequestBuilder</h3>
+				<p>Used to construct chainable request builders to simplify the construction of complex request bodies.</p>
+				<h4 id="with-name-handler-">with(name, [handler])</h4>
+				<p>Add a chainable method with the name <code>name</code> to the generated request builder.
+				A custom <code>handler</code> can be provided to control how the final value will be set in the request body.</p>
+				<ul>
+					<li><p><code>name</code> <em>String</em>: The name of the method that will be generated. If no handler is provided then it will also be the name of the resulting property on the request body. The name <code>build</code> cannot be used as it is reserved for use by the library.</p>
+					</li>
+					<li><p><code>handler</code> <em>Function</em>: A callback to merge the parameters of the builder method into the request body object.</p>
+					</li>
+				</ul>
+				<pre><code class="language-ts"><span class="hljs-keyword">import</span> apion <span class="hljs-keyword">from</span> <span class="hljs-string">'apion'</span>;
+
+apion
+  .builder()
+  .with(<span class="hljs-string">'query'</span>)
+  <span class="hljs-comment">// which is the same as</span>
+  .with(<span class="hljs-string">'query'</span>, <span class="hljs-function"><span class="hljs-params">query</span> =&gt;</span> ({ query }));
+
+<span class="hljs-comment">// with multiple arguments</span>
+apion.builder().with(<span class="hljs-string">'range'</span>, <span class="hljs-function">(<span class="hljs-params">start, end</span>) =&gt;</span> ({ range: { start, end } }));</code></pre>
+				<h4 id="use-builder-">use(builder)</h4>
+				<p>Inherit the property handlers from another <code>RequestBuilder</code>, useful if you have multiple endpoints that share common request properties.</p>
+				<ul>
+					<li><code>builder</code> <em>RequestBuilder</em>: The builder to inherit properties from.</li>
+				</ul>
+				<pre><code class="language-ts"><span class="hljs-keyword">import</span> apion <span class="hljs-keyword">from</span> <span class="hljs-string">'apion'</span>;
+
+<span class="hljs-keyword">const</span> rootBuilder = apion
+  .builder()
+  .with(<span class="hljs-string">'id'</span>)
+  .with(<span class="hljs-string">'parameters'</span>, <span class="hljs-function">(<span class="hljs-params">...parameters</span>) =&gt;</span> ({ parameters }));
+
+<span class="hljs-keyword">const</span> inheritingBuilder = apion
+  .builder()
+  .use(rootBuilder)
+  .with(<span class="hljs-string">'session'</span>, <span class="hljs-function"><span class="hljs-params">id</span> =&gt;</span> ({ session: { id } }));</code></pre>
+				<h4 id="build-">build()</h4>
+				<p>Generate the client-facing request builder class. The only pre-determined property on the builder is <code>build()</code> which will return the final request body.</p>
+				<pre><code class="language-ts"><span class="hljs-keyword">import</span> apion <span class="hljs-keyword">from</span> <span class="hljs-string">'apion'</span>;
+
+<span class="hljs-keyword">const</span> SpecialRequestBuilder = apion
+  .builder()
+  .with(<span class="hljs-string">'name'</span>)
+  .with(<span class="hljs-string">'properties'</span>, <span class="hljs-function">(<span class="hljs-params">...properties</span>) =&gt;</span> ({ properties }));
+
+<span class="hljs-keyword">const</span> builder = <span class="hljs-keyword">new</span> SpecialRequestBuilder();
+
+builder
+  .name(<span class="hljs-string">'ben'</span>)
+  .properties(<span class="hljs-string">'lastUpdated'</span>, <span class="hljs-string">'id'</span>, <span class="hljs-string">'title'</span>)
+  .build();
+<span class="hljs-comment">/*
+{
+  name: 'ben',
+  properties: ['lastUpdated', 'id', 'title']
+}
+*/</span></code></pre>
+				<h2 id="helpers">Helpers</h2>
+				<h3 id="json">JSON</h3>
+				<pre><code class="language-ts"><span class="hljs-keyword">import</span> apion <span class="hljs-keyword">from</span> <span class="hljs-string">'apion'</span>;
+<span class="hljs-keyword">import</span> { json } <span class="hljs-keyword">from</span> <span class="hljs-string">'apion/helpers'</span>;
+
+<span class="hljs-comment">// JSON.stringify() request body</span>
+<span class="hljs-comment">// JSON.parse() response body</span>
+<span class="hljs-comment">// set 'Content-Type: application/json' header</span>
+apion.config().use(json);</code></pre>
+				<!-- ## CORS
+
+```ts
+client.mode('cors' | 'no-cors' | 'same-origin'); // configure for CORS
+```
+
+## referrer
+
+```ts
+client.referrer('client' | 'no-referrer' | 'http://some.example/site');
+client.referrerPolicy('no-referrer' | 'no-referrer-when-downgrade' | 'origin' | 'origin-when-cross-origin' | 'unsafe-url');
+```
+ -->
+			</div>
+		</div>
+		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
+			<nav class="tsd-navigation primary">
+				<ul>
+					<li class="globals  ">
+						<a href="globals.html"><em>Globals</em></a>
+					</li>
+				</ul>
+			</nav>
+			<nav class="tsd-navigation secondary menu-sticky">
+				<ul class="before-current">
+					<li class=" tsd-kind-enum">
+						<a href="enums/header.html" class="tsd-kind-icon">Header</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/method.html" class="tsd-kind-icon">Method</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/phase.html" class="tsd-kind-icon">Phase</a>
+					</li>
+					<li class=" tsd-kind-class tsd-has-type-parameter">
+						<a href="classes/actionbuilder.html" class="tsd-kind-icon">Action<wbr>Builder</a>
+					</li>
+					<li class=" tsd-kind-class tsd-has-type-parameter">
+						<a href="classes/configbuilder.html" class="tsd-kind-icon">Config<wbr>Builder</a>
+					</li>
+					<li class=" tsd-kind-class tsd-has-type-parameter">
+						<a href="classes/context.html" class="tsd-kind-icon">Context</a>
+					</li>
+					<li class=" tsd-kind-class tsd-has-type-parameter">
+						<a href="classes/groupbuilder.html" class="tsd-kind-icon">Group<wbr>Builder</a>
+					</li>
+					<li class=" tsd-kind-class tsd-has-type-parameter">
+						<a href="classes/httpbuilder.html" class="tsd-kind-icon">HTTPBuilder</a>
+					</li>
+					<li class=" tsd-kind-class tsd-has-type-parameter">
+						<a href="classes/requestbuilder.html" class="tsd-kind-icon">Request<wbr>Builder</a>
+					</li>
+					<li class=" tsd-kind-class tsd-has-type-parameter">
+						<a href="classes/requestbuilderinstance.html" class="tsd-kind-icon">Request<wbr>Builder<wbr>Instance</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/requestcontext.html" class="tsd-kind-icon">Request<wbr>Context</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-has-type-parameter">
+						<a href="interfaces/named.html" class="tsd-kind-icon">Named</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/request.html" class="tsd-kind-icon">Request</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/response.html" class="tsd-kind-icon">Response</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
+						<a href="globals.html#actionconstructor" class="tsd-kind-icon">Action<wbr>Constructor</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
+						<a href="globals.html#applicator" class="tsd-kind-icon">Applicator</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
+						<a href="globals.html#apply" class="tsd-kind-icon">Apply</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
+						<a href="globals.html#builtclient" class="tsd-kind-icon">Built<wbr>Client</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
+						<a href="globals.html#builtclient2" class="tsd-kind-icon">Built<wbr>Client2</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
+						<a href="globals.html#constructor" class="tsd-kind-icon">Constructor</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
+						<a href="globals.html#contextualbuilder" class="tsd-kind-icon">Contextual<wbr>Builder</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
+						<a href="globals.html#contextualtransform" class="tsd-kind-icon">Contextual<wbr>Transform</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
+						<a href="globals.html#contextualupdate" class="tsd-kind-icon">Contextual<wbr>Update</a>
+					</li>
+					<li class=" tsd-kind-type-alias">
+						<a href="globals.html#genericgroupbuilder" class="tsd-kind-icon">Generic<wbr>Group<wbr>Builder</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
+						<a href="globals.html#handler" class="tsd-kind-icon">Handler</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
+						<a href="globals.html#lambda" class="tsd-kind-icon">Lambda</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
+						<a href="globals.html#merger" class="tsd-kind-icon">Merger</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
+						<a href="globals.html#nameof" class="tsd-kind-icon">Name<wbr>Of</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
+						<a href="globals.html#transformer" class="tsd-kind-icon">Transformer</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
+						<a href="globals.html#update" class="tsd-kind-icon">Update</a>
+					</li>
+					<li class=" tsd-kind-variable">
+						<a href="globals.html#json" class="tsd-kind-icon">json</a>
+					</li>
+					<li class=" tsd-kind-function tsd-has-type-parameter">
+						<a href="globals.html#action" class="tsd-kind-icon">action</a>
+					</li>
+					<li class=" tsd-kind-function tsd-has-type-parameter">
+						<a href="globals.html#builder" class="tsd-kind-icon">builder</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#compose" class="tsd-kind-icon">compose</a>
+					</li>
+					<li class=" tsd-kind-function tsd-has-type-parameter">
+						<a href="globals.html#config" class="tsd-kind-icon">config</a>
+					</li>
+					<li class=" tsd-kind-function tsd-has-type-parameter">
+						<a href="globals.html#fromentries" class="tsd-kind-icon">from<wbr>Entries</a>
+					</li>
+					<li class=" tsd-kind-function tsd-has-type-parameter">
+						<a href="globals.html#group" class="tsd-kind-icon">group</a>
+					</li>
+					<li class=" tsd-kind-function tsd-has-type-parameter">
+						<a href="globals.html#identity" class="tsd-kind-icon">identity</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#normalizeheaders" class="tsd-kind-icon">normalize<wbr>Headers</a>
+					</li>
+					<li class=" tsd-kind-function tsd-has-type-parameter">
+						<a href="globals.html#resolvedynamicbuilder" class="tsd-kind-icon">resolve<wbr>Dynamic<wbr>Builder</a>
+					</li>
+					<li class=" tsd-kind-function tsd-has-type-parameter">
+						<a href="globals.html#wrapresolver" class="tsd-kind-icon">wrap<wbr>Resolver</a>
+					</li>
+				</ul>
+			</nav>
+		</div>
+	</div>
+</div>
+<footer class="with-border-bottom">
+	<div class="container">
+		<h2>Legend</h2>
+		<div class="tsd-legend-group">
+			<ul class="tsd-legend">
+				<li class="tsd-kind-module"><span class="tsd-kind-icon">Module</span></li>
+				<li class="tsd-kind-object-literal"><span class="tsd-kind-icon">Object literal</span></li>
+				<li class="tsd-kind-variable"><span class="tsd-kind-icon">Variable</span></li>
+				<li class="tsd-kind-function"><span class="tsd-kind-icon">Function</span></li>
+				<li class="tsd-kind-function tsd-has-type-parameter"><span class="tsd-kind-icon">Function with type parameter</span></li>
+				<li class="tsd-kind-index-signature"><span class="tsd-kind-icon">Index signature</span></li>
+				<li class="tsd-kind-type-alias"><span class="tsd-kind-icon">Type alias</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-enum"><span class="tsd-kind-icon">Enumeration</span></li>
+				<li class="tsd-kind-enum-member"><span class="tsd-kind-icon">Enumeration member</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-enum"><span class="tsd-kind-icon">Property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-enum"><span class="tsd-kind-icon">Method</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-interface"><span class="tsd-kind-icon">Interface</span></li>
+				<li class="tsd-kind-interface tsd-has-type-parameter"><span class="tsd-kind-icon">Interface with type parameter</span></li>
+				<li class="tsd-kind-constructor tsd-parent-kind-interface"><span class="tsd-kind-icon">Constructor</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-interface"><span class="tsd-kind-icon">Property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-interface"><span class="tsd-kind-icon">Method</span></li>
+				<li class="tsd-kind-index-signature tsd-parent-kind-interface"><span class="tsd-kind-icon">Index signature</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-class"><span class="tsd-kind-icon">Class</span></li>
+				<li class="tsd-kind-class tsd-has-type-parameter"><span class="tsd-kind-icon">Class with type parameter</span></li>
+				<li class="tsd-kind-constructor tsd-parent-kind-class"><span class="tsd-kind-icon">Constructor</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-class"><span class="tsd-kind-icon">Property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class"><span class="tsd-kind-icon">Method</span></li>
+				<li class="tsd-kind-accessor tsd-parent-kind-class"><span class="tsd-kind-icon">Accessor</span></li>
+				<li class="tsd-kind-index-signature tsd-parent-kind-class"><span class="tsd-kind-icon">Index signature</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited constructor</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited method</span></li>
+				<li class="tsd-kind-accessor tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited accessor</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><span class="tsd-kind-icon">Protected property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-protected"><span class="tsd-kind-icon">Protected method</span></li>
+				<li class="tsd-kind-accessor tsd-parent-kind-class tsd-is-protected"><span class="tsd-kind-icon">Protected accessor</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private method</span></li>
+				<li class="tsd-kind-accessor tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private accessor</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static property</span></li>
+				<li class="tsd-kind-call-signature tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static method</span></li>
+			</ul>
+		</div>
+	</div>
+</footer>
+<div class="container tsd-generator">
+	<p>Generated using <a href="http://typedoc.org/" target="_blank">TypeDoc</a></p>
+</div>
+<div class="overlay"></div>
+<script src="assets/js/main.js"></script>
+<script>if (location.protocol == 'file:') document.write('<script src="assets/js/search.js"><' + '/script>');</script>
+</body>
+</html>

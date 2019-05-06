@@ -1,4 +1,4 @@
-# apion ![CircleCI branch](https://img.shields.io/circleci/project/github/effervescentia/apion/master.svg?style=flat-square) ![npm](https://img.shields.io/npm/v/apion.svg?style=flat-square) [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier)
+# apion ![CircleCI branch](https://img.shields.io/circleci/project/github/effervescentia/apion/master.svg?style=flat-square) ![npm](https://img.shields.io/npm/v/apion.svg?style=flat-square) [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier) [![docs](https://img.shields.io/badge/docs-typedoc-yellow.svg?style=flat-square)](https://effervescentia.github.io/apion)
 
 > JavaScript API client generator
 
@@ -81,7 +81,7 @@ body: -
 
 Methods exposed on `apion`.
 
-### apion.config([name])
+### [apion.config([name])](https://effervescentia.github.io/apion/globals.html#config)
 
 Create a `ConfigBuilder` with an optional `name`
 
@@ -110,7 +110,7 @@ body: -
 */
 ```
 
-### apion.group(name, [constructor])
+### [apion.group(name, [constructor])](https://effervescentia.github.io/apion/globals.html#group)
 
 Create a `GroupBuilder` with a `name` and an optional `constructor` for dynamically setting context for nested builders
 
@@ -186,7 +186,7 @@ body: -
 */
 ```
 
-### apion.action(name, [constructor | requestBuilder])
+### [apion.action(name, [constructor | requestBuilder])](https://effervescentia.github.io/apion/globals.html#action)
 
 - `name` _String_: Sets the name of the action which by default is used as the name of the property added when nesting under another group or action.
 - `constructor` _Function_: A callback used to dynamically set the context for nested builders.
@@ -226,7 +226,7 @@ body: '{"start":10,"end":200,"interval":25,"timezone":"UTC"}'
 */
 ```
 
-### apion.builder([formatter])
+### [apion.builder([formatter])](https://effervescentia.github.io/apion/globals.html#builder)
 
 Create a `RequestBuilder` with an optional `formatter`
 
@@ -279,7 +279,7 @@ creates request bodies of the form:
 */
 ```
 
-### HTTPBuilder
+### [HTTPBuilder](https://effervescentia.github.io/apion/classes/httpbuilder.html)
 
 The base `class` for `ConfigBuilder`, `GroupBuilder` and `ActionBuilder`. Contains utility methods for managing request properties.
 
@@ -308,7 +308,7 @@ apion
   .url((prev, ctx) => `${prev}/${ctx.path}`);
 ```
 
-#### port(port | transform)
+#### [port(port | transform)](https://effervescentia.github.io/apion/classes/httpbuilder.html#port)
 
 - `port` _Number_: A port to set for the request, overrides the existing port.
 - `transform` _Function_: A callback to transform the previous value to the next value. (see [transform](#transform))
@@ -319,7 +319,7 @@ import apion from 'apion';
 apion.config().port(8080);
 ```
 
-#### query(query | transform)
+#### [query(query | transform)](https://effervescentia.github.io/apion/classes/httpbuilder.html#query)
 
 - `query` _String_: A query to set for the request, overrides the existing query.
 - `transform` _Function_: A callback to transform the previous value to the next value. (see [transform](#transform))
@@ -330,7 +330,7 @@ import apion from 'apion';
 apion.config().query('x=y&a=10');
 ```
 
-#### path(path | transform)
+#### [path(path | transform)](https://effervescentia.github.io/apion/classes/httpbuilder.html#path)
 
 - `path` _String_: A path to set for the request, overrides the existing path. If the path starts with a forward slash (`/`) then the whole path will be replaced, otherwise it will be added to the existing path.
 - `transform` _Function_: A callback to transform the previous value to the next value. (see [transform](#transform))
@@ -349,7 +349,7 @@ apion
   .path('/my/path'); // 'https://example.com/my/path'
 ```
 
-#### method(method)
+#### [method(method)](https://effervescentia.github.io/apion/classes/httpbuilder.html#method)
 
 - `method` _String_: A method to set for the request, overrides the exting method.
 
@@ -371,27 +371,27 @@ apion
   .method(Method.POST);
 ```
 
-#### get()
+#### [get()](https://effervescentia.github.io/apion/classes/httpbuilder.html#get)
 
 Sets the request method to `GET`.
 
-#### post()
+#### [post()](https://effervescentia.github.io/apion/classes/httpbuilder.html#post)
 
 Sets the request method to `POST`.
 
-#### patch()
+#### [patch()](https://effervescentia.github.io/apion/classes/httpbuilder.html#patch)
 
 Sets the request method to `PATCH`.
 
-#### put()
+#### [put()](https://effervescentia.github.io/apion/classes/httpbuilder.html#put)
 
 Sets the request method to `PUT`.
 
-#### delete()
+#### [delete()](https://effervescentia.github.io/apion/classes/httpbuilder.html#delete)
 
 Sets the request method to `DELETE`.
 
-#### headers(headers | transform)
+#### [headers(headers | transform)](https://effervescentia.github.io/apion/classes/httpbuilder.html#headers)
 
 - `headers` _Object_: A headers to set for the request, overrides the existing headers.
 - `transform` _Function_: A callback to transform the previous value to the next value. (see [transform](#transform))
@@ -402,7 +402,7 @@ import apion from 'apion';
 apion.config().headers({ 'content-type': 'application/json' });
 ```
 
-#### body(body | transform)
+#### [body(body | transform)](https://effervescentia.github.io/apion/classes/httpbuilder.html#body)
 
 - `body` _Object_: A body to set for the request, overrides the existing body.
 - `transform` _Function_: A callback to transform the previous value to the next value. (see [transform](#transform))
@@ -413,7 +413,7 @@ import apion from 'apion';
 apion.config().body('test@example.com:123456');
 ```
 
-#### formatter(formatter)
+#### [formatter(formatter)](https://effervescentia.github.io/apion/classes/httpbuilder.html#formatter)
 
 Add a callback to transform the request body before sending it.
 
@@ -427,7 +427,7 @@ apion
   .formatter(body => (typeof body === 'string' ? body : JSON.stringify(body)));
 ```
 
-#### parser(parser)
+#### [parser(parser)](https://effervescentia.github.io/apion/classes/httpbuilder.html#parser)
 
 Add a callback to transform the response body after receiving it.
 
@@ -441,11 +441,11 @@ apion
   .parser(body => (typeof body === 'string' ? JSON.parse(body) : body));
 ```
 
-### ConfigBuilder
+### [ConfigBuilder](https://effervescentia.github.io/apion/classes/configbuilder.html)
 
 Used to construct re-usable updates to context and request properties. Inherits all methods from `HTTPBuilder`.
 
-#### ctx(obj)
+#### [ctx(obj)](https://effervescentia.github.io/apion/classes/configbuilder.html#ctx)
 
 Update the context by merging in a new object (uses the same logic as `Object.assign()`).
 
@@ -457,7 +457,7 @@ import apion from 'apion';
 apion.config().ctx({ id: 123 });
 ```
 
-#### use(builder | createBuilder)
+#### [use(builder | createBuilder)](https://effervescentia.github.io/apion/classes/configbuilder.html#use)
 
 Add the configuration from the provided `builder` or the result of the `createBuilder` function to the builder instance.
 
@@ -492,7 +492,7 @@ apion
   .url('https://example.com/api');
 ```
 
-#### inherit(builder)
+#### [inherit(builder)](https://effervescentia.github.io/apion/classes/configbuilder.html#inherit)
 
 Like `use()` except that configuration transformations are pushed to the top of the builder's inheritance chain.
 
@@ -507,7 +507,7 @@ apion
   .inherit(config);
 ```
 
-#### pipe(transform)
+#### [pipe(transform)](https://effervescentia.github.io/apion/classes/configbuilder.html#pipe)
 
 A utility method to help apply re-usable chained methods to a builder instance.
 
@@ -524,7 +524,7 @@ const test = configure(apion.action('test'));
 const test = apion.action('test').pipe(configure);
 ```
 
-#### extend()
+#### [extend()](https://effervescentia.github.io/apion/classes/configbuilder.html#extend)
 
 Clone a builder instance in order to create an extended version of it.
 
@@ -536,11 +536,11 @@ const config = apion.config().url('https://example.com');
 const extended = config.extend().path('api');
 ```
 
-### GroupBuilder
+### [GroupBuilder](https://effervescentia.github.io/apion/classes/groupbuilder.html)
 
 Used to construct groups of nested builders. Inherits all methods from `ConfigBuilder`.
 
-#### ctor(constructor)
+#### [ctor(constructor)](https://effervescentia.github.io/apion/classes/groupbuilder.html#ctor)
 
 Override or set the builder's `constructor` to be used to provide dynamic context properties.
 
@@ -552,35 +552,35 @@ import apion from 'apion';
 apion.group('auth').ctor(token => ({ token }));
 ```
 
-#### nest([name], builder)
+#### [nest([name], builder)](https://effervescentia.github.io/apion/classes/groupbuilder.html#nest)
 
 Add a nested builder to a `GroupBuilder` or `ActionBuilder`.
 
 - `name` _String_: A name to override the name on the builder.
 - `builder` _GroupBuilder | ActionBuilder_: A builder to be nested under this builder instance. If no name is provided, the name provided when constructing the builder will be used.
 
-#### build([fetch])
+#### [build([fetch])](https://effervescentia.github.io/apion/classes/groupbuilder.html#build)
 
 Build an API client with this builder as the root node.
 
 - `fetch` _Function_: A replacement for the `fetch` instance used under the hood when making requests (defaults to `cross-fetch`).
 
-### ActionBuilder
+### [ActionBuilder](https://effervescentia.github.io/apion/classes/actionbuilder.html)
 
 Used to construct action builders for sending requests over the network. Inherits all methods from `GroupBuilder`.
 
-#### ctor(constructor | requestBuilder)
+#### [ctor(constructor | requestBuilder)](https://effervescentia.github.io/apion/classes/actionbuilder.html#ctor)
 
 Override or set the builder's `constructor` to be used to provide dynamic context properties.
 
 - `constructor` _Function_: A callback used to dynamically set the context for nested builders (see [constructor](#constructor)).
 - `requestBuilder` _RequestBuilder_: An instance of a `RequestBuilder` used to inject a simple builder pattern when constructing complex request bodies (see [requestBuilder](#requestBuilder)).
 
-### RequestBuilder
+### [RequestBuilder](https://effervescentia.github.io/apion/classes/requestbuilder.html)
 
 Used to construct chainable request builders to simplify the construction of complex request bodies.
 
-#### with(name, [handler])
+#### [with(name, [handler])](https://effervescentia.github.io/apion/classes/requestbuilder.html#with)
 
 Add a chainable method with the name `name` to the generated request builder.
 A custom `handler` can be provided to control how the final value will be set in the request body.
@@ -602,7 +602,7 @@ apion
 apion.builder().with('range', (start, end) => ({ range: { start, end } }));
 ```
 
-#### use(builder)
+#### [use(builder)](https://effervescentia.github.io/apion/classes/requestbuilder.html#use)
 
 Inherit the property handlers from another `RequestBuilder`, useful if you have multiple endpoints that share common request properties.
 
@@ -622,7 +622,7 @@ const inheritingBuilder = apion
   .with('session', id => ({ session: { id } }));
 ```
 
-#### build()
+#### [build()](https://effervescentia.github.io/apion/classes/requestbuilder.html#build)
 
 Generate the client-facing request builder class. The only pre-determined property on the builder is `build()` which will return the final request body.
 
@@ -650,7 +650,7 @@ builder
 
 ## Helpers
 
-### JSON
+### [JSON](https://effervescentia.github.io/apion/globals.html#json)
 
 ```ts
 import apion from 'apion';

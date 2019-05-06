@@ -66,7 +66,7 @@ export default class ActionBuilder<
     if (this._ctor) {
       if (this._ctor instanceof RequestBuilder) {
         // tslint:disable-next-line:prefer-object-spread
-        return Object.assign(this.wrappedRequestBuilder, children);
+        return Object.assign(this.wrappedRequestBuilder(fetch), children);
       }
 
       return Object.assign((...args: A) => {
@@ -88,24 +88,28 @@ export default class ActionBuilder<
   /**
    * a callback for accepting a request builder callback or value and sending the resulting request
    */
-  private readonly wrappedRequestBuilder = (
+  private wrappedRequestBuilder(
+    fetch: typeof _fetch
+  ): (
     handlerOrValue:
       | ((
           builder: RequestBuilderInstance<any>
         ) => RequestBuilderInstance<any> | object)
       | object
-  ): Promise<Response> => {
-    const transient = this.extend('action_ctor::request_builder');
+  ) => Promise<Response> {
+    return handlerOrValue => {
+      const transient = this.extend('action_ctor::request_builder');
 
-    const body =
-      typeof handlerOrValue === 'function'
-        ? this.buildBody(handlerOrValue as any)
-        : handlerOrValue;
+      const body =
+        typeof handlerOrValue === 'function'
+          ? this.buildBody(handlerOrValue as any)
+          : handlerOrValue;
 
-    transient.body(body);
+      transient.body(body);
 
-    return this.send(fetch, transient as any);
-  };
+      return this.send(fetch, transient as any);
+    };
+  }
 
   /**
    * build the final request, send it and apply appropriate middleware

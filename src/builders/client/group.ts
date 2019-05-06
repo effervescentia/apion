@@ -13,7 +13,7 @@ export type GenericGroupBuilder = GroupBuilder<any, string, any, any>;
 export type NameOf<T> = T extends ConfigBuilder<any, infer R> ? R : never;
 
 export type Constructor<K extends string, T extends any[], R extends object> =
-  | Lambda<T, R>
+  | Lambda<T, Partial<R>>
   | Lambda<
       T,
       <S extends Record<string, any>>(
